@@ -21,7 +21,7 @@ setup(
     # py_modules=[''],
     # package_dir={'': ''},
     packages=find_packages(),
-    install_requires=['miqstaff'],
+    install_requires=['miq'],
     extras_require={
         "dev": [
             'coverage', 'selenium',
