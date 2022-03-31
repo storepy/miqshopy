@@ -1,0 +1,25 @@
+{% load humanize %}
+{% load l10n %}
+
+<div class="product-card">
+  <a href="{{product.detail_path}}" class="product-card-link">
+    <div>
+      {{product.cover.render}}
+
+      <div class="product-info">
+        <div class="product-name">{{product.name}}</div>
+        <div class="product-price-display d-flex align-items-center">
+          
+          {% if product.is_on_sale %}
+          <div class="text-danger fw-bold me-2">{{product.sale_price|stringformat:"d"|intcomma}} CFA</div>
+          {% endif %}
+            
+          <div class="{% if product.is_on_sale %}text-line-through{% else %}fw-bold{% endif %}">
+            {{product.retail_price|stringformat:"d"|intcomma}} CFA
+            
+          </div>
+        </div>
+      </div>
+    </div>
+  </a>
+</div>

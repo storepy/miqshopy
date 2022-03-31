@@ -1,0 +1,161 @@
+{% extends 'shop/base.django.html' %}
+{% load humanize %}
+{% load l10n %}
+
+{% block header %}
+
+{% if page.cover %}{{page.cover.render}}{% endif %}
+
+<section class="brands-banner d-grid grid-2 grid-md-4 gap-2 px-1 my-3">
+  <div class="">{% include 'shop/suppliers/shein.html' %}</div>
+  <div class="">{% include 'shop/suppliers/plt.html' %}</div>
+  <div class="">{% include 'shop/suppliers/fnova.html' %}</div>
+  <div class="">{% include 'shop/suppliers/zara.html' %}</div>
+</section>
+
+<section class="my-4 text-center">
+  <a href="/shop/"class="catalog-link btn btn-primary"  title="Voir catalogue" aria-label="Voir catalogue">Voir notre catalogue</a>
+</section>
+
+{% endblock header %}
+  
+
+<div>[Promotion/item of the day/style of the day/Offre de la semaine]</div>
+<div>[best sellers/meilleur ventes]</div>
+<section class="miq-container-fluid p-1"><h3>En vogue</h3></section>
+<div>[blog]</div>
+
+{% block main %}
+
+
+{% if categories %}
+<section class="miq-container-fluid center p-1">
+  <div class="page-section-header">
+    <h3 class="">Achetez par catégorie</h3>
+  </div>
+  
+  <div class="category-links pb-2">
+    {% for cat in categories %}
+    <div class="item w-25 w-md-15">
+      <a href="{{cat.detail_path}}" class="" title="{{cat.name}}">
+        {{cat.cover.render_thumb_sq}}
+        <div class="info">{{cat.name}}</div>
+      </a>
+    </div>
+    {% endfor %}
+  </div>
+</section>  
+{% endif %}
+  
+
+{% if new_products %}
+<section class="miq-container-fluid p-1">
+  <div class="page-section-header">
+    <h3>Nouveautés</h3>
+    <a href="/shop/?new=all" class="page-section-header-link" title="Voir tous nos nouveaux produits">Voir tout</a>
+  </div>
+  <div class="page-section-body">
+    <div class="products-grid d-grid grid-2 grid-md-4 gap-2">
+    {% for prod in new_products %}
+      {% include 'shop/product-card.django.html' with product=prod %}
+    {% endfor %}
+    </div>  
+  </div>
+</section>  
+{% endif %}
+
+
+{% if occasions %}
+<section class="miq-container-fluid p-1">
+  <div class="page-section-header">
+    <h3 class="">Achetez par occasion</h3>
+    <a href="" class="page-section-header-link" title="Voir tous nos produits">Voir tout</a>
+  </div>
+  
+</section>
+{% endif %}
+
+{% if sale_products %}
+<section class="miq-container-fluid p-1">
+  <div class="page-section-header text-danger">
+    <h3 class="">Soldes</h3>
+    <a href="/shop/?sale=all" class="page-section-header-link text-danger" title="Voir tous nos produits en solde">Voir tout</a>
+  </div>
+  <div class="page-section-body">
+    <div class="products-grid d-grid grid-2 grid-md-4 gap-2">
+    {% for prod in sale_products %}
+      {% include 'shop/product-card.django.html' with product=prod %}
+    {% endfor %}
+    </div>  
+  </div>
+</section>  
+{% endif %}
+
+
+<section class="miq-container center text-center">
+  <a href="http://" target="_blank" rel="noopener noreferrer" title="#feminiti">
+    <h2 class="mb-3 text-md">#feminiti</h2>
+  </a>
+</section>
+  
+{% endblock main %}
+
+<style>
+{% block css %}{{ block.super }}
+
+  a{color: var(--gray-900);}
+  .catalog-link{
+    font-weight: 500;
+    padding: 0.5rem 0.75rem;
+  }
+
+  .miq-container-fluid,section{
+      margin-bottom: 2rem;
+  }
+
+  h2,h1,h3{font-family: var(--ff);}
+  h3{
+      font-weight: normal;
+      font-size: var(--fs-md);
+      
+  }
+
+  .brands-banner{
+      text-align: center;
+      align-items: center;
+  }
+  .brands-banner svg{
+      max-width: 150px;
+  }
+
+  .category-links img{
+      max-width: 100%;
+      height: auto;
+      position: relative;
+      border-radius: 50%;
+
+  }
+  .category-links .item{
+    text-align: center;
+  }
+
+  .page-section-header{
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--sp-3);
+
+  }
+
+  .page-section-header .page-section-header-link{
+    color:var(--blue-700);
+    font-weight: 600;
+    text-decoration: underline;
+
+  }
+  .page-section-header .text-danger{
+    color:var(--red-700);
+  }
+
+{% endblock css %}
+</style>

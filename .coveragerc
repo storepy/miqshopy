@@ -1,0 +1,13 @@
+[run]
+source = .
+omit = */env/*
+    */tests/*
+    */migrations/*
+    */urls.py
+    */runtests.py
+    */setup.py
+    */settings/*
+    */wsgi.py
+    */asgi.py
+    manage.py
+    fabfile.py

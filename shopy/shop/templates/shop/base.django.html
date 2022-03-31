@@ -1,0 +1,10 @@
+{% extends 'public.django.html' %}
+
+
+{% block head_scripts %}{{ block.super }}
+
+{% if jsonld %}<script type="application/ld+json">{{ jsonld }}</script>{% endif %}
+    
+{% endblock head_scripts %}
+
+ 

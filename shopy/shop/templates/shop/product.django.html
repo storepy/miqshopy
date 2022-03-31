@@ -1,0 +1,29 @@
+{% extends 'shop/base.django.html' %}
+
+{% block title %}{{title}}{% endblock title %}
+
+{% block meta %}{{ block.super }}
+
+<meta property="og:title" content="{{object.title}}" />
+<meta property="og:type" content="product" />
+<!-- <meta property="og:url" content="https://www.aritzia.com/us/en/product/melina-pant/81518411.html" /> -->
+<!-- <meta property="og:image" content="https://aritzia.scene7.com/is/image/Aritzia/large/f21_04_a06_81518_23349_on_a.jpg" /> -->
+<meta property="og:site_name" content="{{site.name}}" />
+<!-- <meta property="og:description" content="The Wilfred Melina Pant is a high-waisted, Vegan Leather pants. And they went viral on TikTok. These are high-rise, slim-fit pants that are cut and structured just like denim. They&amp;rsquo;re made with our innovative Vegan Leather that looks and feels like the real thing. They have authentic drape and a soft sheen that feels right from day one." /> -->
+<!-- <meta property="og:price:amount" content="148.00" /> -->
+<!-- <meta property="og:price:standard_amount" content="148.00" /> -->
+<meta property="og:price:currency" content="USD" />
+<meta property="og:availability" content="instock" />
+<!-- <meta property="product:gender" content="female"> -->
+<!-- <meta property="product:color" content="garnet red"> -->
+<!-- <meta property="product:color:map" content="RED"> -->
+<!-- <meta property="product:color:image" content=""> -->
+<!-- <meta property="fb:admins" content="1795204519" /> -->
+<meta name="robots" content="index,follow">
+<meta name="apple-mobile-web-app-title" content="{{site.name}}" />
+<meta name="description" content=" {% firstof object.meta_description object.description  %}" />
+<meta name="MobileOptimized" content="320" />
+<meta name="format-detection" content="telephone=yes" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+  
+{% endblock meta %}
