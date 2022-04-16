@@ -6,12 +6,12 @@
 
 {% if page.cover %}{{page.cover.render}}{% endif %}
 
-<section class="brands-banner d-grid grid-2 grid-md-4 gap-2 px-1 my-3">
+{% comment %} <section class="brands-banner d-grid grid-2 grid-md-4 gap-2 px-1 my-3">
   <div class="">{% include 'shop/suppliers/shein.html' %}</div>
   <div class="">{% include 'shop/suppliers/plt.html' %}</div>
   <div class="">{% include 'shop/suppliers/fnova.html' %}</div>
   <div class="">{% include 'shop/suppliers/zara.html' %}</div>
-</section>
+</section> {% endcomment %}
 
 <section class="my-4 text-center">
   <a href="/shop/"class="catalog-link btn btn-primary"  title="Voir catalogue" aria-label="Voir catalogue">Voir notre catalogue</a>
@@ -21,7 +21,7 @@
   
 
 <div>[Promotion/item of the day/style of the day/Offre de la semaine]</div>
-<div>[best sellers/meilleur ventes]</div>
+<div>[best sellers/meilleur ventes]</div> 
 <section class="miq-container-fluid p-1"><h3>En vogue</h3></section>
 <div>[blog]</div>
 
@@ -34,7 +34,8 @@
     <h3 class="">Achetez par catégorie</h3>
   </div>
   
-  <div class="category-links pb-2">
+  <div class="p-category-links pb-2">
+  <div class="p-category-links-inner">
     {% for cat in categories %}
     <div class="item w-25 w-md-15">
       <a href="{{cat.detail_path}}" class="" title="{{cat.name}}">
@@ -43,6 +44,34 @@
       </a>
     </div>
     {% endfor %}
+
+    {% for cat in categories %}
+    <div class="item w-25 w-md-15">
+      <a href="{{cat.detail_path}}" class="" title="{{cat.name}}">
+        {{cat.cover.render_thumb_sq}}
+        <div class="info">{{cat.name}}</div>
+      </a>
+    </div>
+    {% endfor %}
+
+    {% for cat in categories %}
+    <div class="item w-25 w-md-15">
+      <a href="{{cat.detail_path}}" class="" title="{{cat.name}}">
+        {{cat.cover.render_thumb_sq}}
+        <div class="info">{{cat.name}}</div>
+      </a>
+    </div>
+    {% endfor %}
+
+    {% for cat in categories %}
+    <div class="item w-25 w-md-15">
+      <a href="{{cat.detail_path}}" class="" title="{{cat.name}}">
+        {{cat.cover.render_thumb_sq}}
+        <div class="info">{{cat.name}}</div>
+      </a>
+    </div>
+    {% endfor %}
+  </div>
   </div>
 </section>  
 {% endif %}
@@ -128,14 +157,23 @@
       max-width: 150px;
   }
 
-  .category-links img{
+  .p-category-links{
+  }
+  
+  .p-category-links-inner{
+    width:100%;
+    overflow-y: scroll;
+    display:inline-grid;
+  }
+
+  .p-category-links img{
       max-width: 100%;
       height: auto;
       position: relative;
       border-radius: 50%;
 
   }
-  .category-links .item{
+  .p-category-links .item{
     text-align: center;
   }
 

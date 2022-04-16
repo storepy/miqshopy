@@ -79,6 +79,10 @@ class ProductsView(ViewMixin, ListView):
     def get_context_data(self, **kwargs) -> dict:
         context = super().get_context_data(**kwargs)
 
+        # context['meta_description'] = f"Trouvez des robes stylées pour toute occasion sur {site.name}."\
+        #     " Vous adorerez notre collection de robes noires, petites ou longues ou pour les occasions à des prix imbattables. "\
+        #     "Tous les jours, every day fête, party bureau . travail, soirée, nightclub, sporty"
+
         breadcrumbs = [{'label': 'Accueil', 'path': '/'}]
         if self.request.GET.get('sale', self.request.GET.get('q')):
             breadcrumbs.append({'label': 'Catalogue', 'path': '/shop/'},)
@@ -122,6 +126,8 @@ FB
 
 
 class FBSerializer(serializers.ModelSerializer):
+    # https://developers.facebook.com/docs/marketing-api/catalog/reference#supported-fields
+    # color, status(active,archived), manufacturer_info
     class Meta:
         model = Product
         fields = (
@@ -130,10 +136,9 @@ class FBSerializer(serializers.ModelSerializer):
 
             # optional
             'sale_price', 'additional_image_link', 'product_type',
-            # 'gender',
-            # 'item_group_id',
-            # 'size',
-            # 'google_product_category',
+            'size', 'gender', 'inventory',
+            'item_group_id',
+            'google_product_category',
         )
 
     id = serializers.CharField(source='meta_slug', read_only=True)
@@ -144,9 +149,43 @@ class FBSerializer(serializers.ModelSerializer):
     sale_price = serializers.SerializerMethodField()
     additional_image_link = serializers.SerializerMethodField()
     product_type = serializers.SerializerMethodField()
+    item_group_id = serializers.SerializerMethodField()
+    size = serializers.SerializerMethodField()
+
+    # image_link: 1024 x 1024/1200 x 628,
+    # 20 max/https://www.fb.com/t_shirt_2.jpg,https://www.fb.com/t_shirt_3.jpg
     image_link = serializers.SerializerMethodField()
-    condition = serializers.SerializerMethodField()
-    availability = serializers.SerializerMethodField()
+    google_product_category = serializers.SerializerMethodField()
+    gender = serializers.SerializerMethodField()
+    inventory = serializers.SerializerMethodField()
+    condition = serializers.CharField(source='get_condition', read_only=True)
+    availability = serializers.CharField(source='get_availability', read_only=True)
+
+    def get_google_product_category(self, inst):
+        if (cat := getattr(inst.category, 'google_product_category', None)) and isinstance(cat, str):
+            return cat
+        return "Clothing & Accessories > Clothing > Dresses"
+
+    def get_item_group_id(self, inst):
+        size = self.context.get('size')
+        if not size:
+            return
+        return inst.meta_slug
+
+    def get_inventory(self, inst):
+        size = self.context.get('size')
+        if not size:
+            return
+        return size.quantity
+
+    def get_gender(self, inst):
+        return 'female'
+
+    def get_size(self, inst):
+        size = self.context.get('size')
+        if not size:
+            return
+        return f'{size.name}'
 
     def get_price(self, inst):
         if inst.is_on_sale:
@@ -180,20 +219,13 @@ class FBSerializer(serializers.ModelSerializer):
         return self._request.build_absolute_uri(img.src.url)
 
     def get_product_type(self, inst):
-        return inst.category.name
+        return 2271
+        # return inst.category.name
 
     def get_brand(self, inst):
-        site = local.site
+        site = getattr(local, 'site')
         if site:
             return site.name
-
-    def get_availability(self, inst):
-        if inst.get_quantity() > 0:
-            return 'in stock'
-        return 'out of stock'
-
-    def get_condition(self, inst):
-        return 'new'
 
     @property
     def _request(self):
@@ -205,12 +237,25 @@ class ProductsFbDataFeed(View):
         response = HttpResponse(content_type='text/csv')
         response['Content-Disposition'] = 'attachment; filename="fb.csv"'
 
-        ser = FBSerializer(Product.objects.published(), many=True, context={"request": request})
-        header = FBSerializer.Meta.fields
-
-        writer = csv.DictWriter(response, fieldnames=header)
+        writer = csv.DictWriter(response, fieldnames=FBSerializer.Meta.fields)
         writer.writeheader()
-        for row in ser.data:
-            writer.writerow(row)
+
+        qs = Product.objects.published()
+        for product in qs:
+            data = FBSerializer(product, context={"request": request}).data
+
+            sizes = product.sizes
+            if not sizes.exists():
+                writer.writerow(data)
+                continue
+
+            for size in sizes.all():
+                item = {
+                    **FBSerializer(product, context={"request": request, 'size': size}).data,
+                    'id': size.slug,
+                    'availability': size.get_availability(),
+
+                }
+                writer.writerow(item)
 
         return response
