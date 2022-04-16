@@ -1,6 +1,7 @@
 
-from rest_framework.serializers import ModelSerializer, SlugRelatedField, JSONField, DecimalField
+from rest_framework.serializers import ModelSerializer, SlugRelatedField, JSONField, DecimalField, SerializerMethodField
 
+from ..utils import price_to_dict
 from ..models import Product, SupplierOrder, SupplierItem
 
 
@@ -23,10 +24,11 @@ class SupplierOrderSerializer(ModelSerializer):
         fields = (
             #  'items_stage',
             'name', 'order_id', 'supplier',
-            'currency', 'is_paid', 'is_paid_dt', 'is_fulfilled_dt', 'total_cost',
-            *read_only_fields
+            'is_paid', 'is_paid_dt', 'is_fulfilled_dt', 'total_cost', 'total_cost_data',
+            'currency', *read_only_fields
         )
 
+    total_cost_data = SerializerMethodField(read_only=True)
     avg_cost = DecimalField(source='get_avg_cost', max_digits=10, decimal_places=2, read_only=True)
     items_cost = JSONField(source='get_items_cost', read_only=True)
     items_revenue = JSONField(source='get_items_revenue', read_only=True)
@@ -35,5 +37,7 @@ class SupplierOrderSerializer(ModelSerializer):
         many=True, required=False
     )
 
-
-# SupplierOrder.objects.get(slug='68148363-f9df-4c9f-bc2a-3c2320db46ca').delete()
+    def get_total_cost_data(self, inst: SupplierOrder) -> dict:
+        if inst.is_paid:
+            return price_to_dict(inst.total_cost, inst.currency)
+        return inst.get_items_cost()

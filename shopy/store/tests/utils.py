@@ -1,8 +1,8 @@
 from django.urls import reverse_lazy
 
-from miq.core.tests.mixins import TestMixin
+from miq.tests.mixins import TestMixin
 
-from shopy.models import Product, ProductPage
+from shopy.store.models import Product, ProductPage
 
 
 class ShopMixin(TestMixin):

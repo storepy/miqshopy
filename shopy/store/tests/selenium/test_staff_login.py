@@ -3,8 +3,8 @@ from django.test import LiveServerTestCase
 
 from selenium import webdriver
 
-from miq.core.tests.mixins import TestMixin
-from miq.core.tests.selenium.pages import HomePage
+from miq.tests.mixins import TestMixin
+from miq.tests.selenium.pages import HomePage
 
 dirname = os.path.dirname(__file__)
 driver_path = os.path.join(dirname, '../../../../chromedriver')

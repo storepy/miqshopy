@@ -30,6 +30,8 @@ class ProductStage(models.TextChoices):
 
 ProductStages = get_text_choices(ProductStage)
 
+# gender: female, male, unisex.
+
 
 class Product(BaseModelMixin):
 
@@ -141,13 +143,32 @@ class Product(BaseModelMixin):
     def name_truncated(self):
         return truncate_str(capfirst(self.name), length=30)
 
+    def get_availability(self):
+        """
+        IN = 'in stock'
+        AV = 'available for order'
+        OU = 'out of stock'
+        DI = 'discontinued'
+        """
+        if not self.sizes.exists():
+            return 'out of stock'
+        return 'in stock'
+
     def get_quantity(self):
+        if not self.sizes.exists():
+            return 0
         return sum(size.quantity for size in self.sizes.all())
 
     def get_price(self):
         if self.is_on_sale:
             return self.sale_price
         return self.retail_price
+
+    def get_condition(self):
+        # a = 'new'
+        # b = 'refurbished'
+        # c = 'used'
+        return 'new'
 
     def __str__(self):
         return capfirst(f'{self.name}')

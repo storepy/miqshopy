@@ -59,7 +59,24 @@ class SupplierOrderViewset(ViewSetMixin, viewsets.ModelViewSet):
 
     crawler = Crawler()
 
-    @ action(methods=['post'], detail=True, url_path=r'fnova')
+    @action(methods=['patch', 'delete'], detail=True, url_path=r'item/(?P<product_slug>[\w-]+)')
+    def item(self, request, *args, product_slug: str = None, **kwargs):
+        if not product_slug:
+            raise serializers.ValidationError({'product': 'Slug required'})
+
+        item = self.get_object().items.filter(product__slug=product_slug).first()  # type: SupplierOrder
+        if not item:
+            raise serializers.ValidationError({'product': 'Not found'})
+
+        if request.method == 'DELETE':
+            item.delete()
+
+        if request.method == 'PATCH':
+            pass
+
+        return self.retrieve(request, *args, **kwargs)
+
+    @action(methods=['post'], detail=True, url_path=r'fnova')
     def fnova(self, request, *args, **kwargs):
         url = request.data.get('url')  # type: str
         if not url:
@@ -100,7 +117,7 @@ class SupplierOrderViewset(ViewSetMixin, viewsets.ModelViewSet):
 
         return self.retrieve(request, *args, **kwargs)
 
-    @ action(methods=['post'], detail=True, url_path=r'plt')
+    @action(methods=['post'], detail=True, url_path=r'plt')
     def plt(self, request, *args, **kwargs):
         url = request.data.get('url')  # type: str
         if not url:
@@ -144,7 +161,7 @@ class SupplierOrderViewset(ViewSetMixin, viewsets.ModelViewSet):
 
         return self.retrieve(request, *args, **kwargs)
 
-    @ action(methods=['post'], detail=True, url_path=r'shein')
+    @action(methods=['post'], detail=True, url_path=r'shein')
     def shein(self, request: 'http.HttpRequest', *args: tuple, **kwargs: dict) -> 'Response':
         url = request.data.get('url')  # type: str
         if not url:

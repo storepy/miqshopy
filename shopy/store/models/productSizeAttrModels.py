@@ -21,6 +21,11 @@ class ProductSize(BaseModelMixin):
 
     # retail_price, sale_price
 
+    def get_availability(self):
+        if self.quantity <= 0:
+            return 'out of stock'
+        return 'in stock'
+
     class Meta:
         ordering = ('created', 'name')
         verbose_name = 'Product size'
