@@ -14,7 +14,8 @@ class ProductQueryset(models.QuerySet):
 
         keys = (
             'name', 'description', 'category__name',
-            'category__description', 'attributes__value'
+            'category__description', 'attributes__value',
+            'supplier_items__item_sn'
         )
 
         return self.annotate(

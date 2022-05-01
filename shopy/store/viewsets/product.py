@@ -190,6 +190,9 @@ class ProductViewset(ViewSetMixin, viewsets.ModelViewSet):
                 return qs.none()
             qs = qs.filter(supplier_orders__slug=order_slug)
 
+        if(q := params.get('q')) and q != '':
+            qs = qs.by_name(q)
+
         if(cat := params.get('cat')) and cat != '':
             qs = qs.filter(category__slug=cat)
 
