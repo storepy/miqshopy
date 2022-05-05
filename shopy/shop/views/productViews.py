@@ -69,7 +69,7 @@ class ProductsView(ViewMixin, ListView):
     model = Product
     template_name = 'shop/products.django.html'
     context_object_name = 'products'
-    paginate_by = 16
+    paginate_by = 12
     page_label = None
 
     # TODO: Stage
