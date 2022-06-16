@@ -1,4 +1,5 @@
 from django.db import models
+from django.urls import reverse_lazy
 from django.utils import timezone
 from django.utils.text import capfirst
 from django.utils.translation import gettext_lazy as _
@@ -56,7 +57,10 @@ class Category(BaseModelMixin):
 
     def get_is_public(self):
         return self.meta_slug and self.is_published
-        # return reverse_lazy('shopy:category', args=[self.meta_slug])
+
+    @property
+    def detail_path(self):
+        return reverse_lazy('shopy:category', args=[self.meta_slug])
 
     class Meta:
         ordering = ('position', '-created', 'name')
