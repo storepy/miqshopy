@@ -1,4 +1,5 @@
 
+
 from django.db import models
 from django.db.models import Avg
 from django.utils.translation import gettext_lazy as _
@@ -124,6 +125,7 @@ class SupplierItem(BaseModelMixin):
         help_text='FOB Price, excluding inbound shipping, taxes '
         'and others costs'
     )
+    data = models.JSONField(default=dict)
 
     def supplier(self):
         return self.order.supplier

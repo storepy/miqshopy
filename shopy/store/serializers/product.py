@@ -23,7 +23,7 @@ class ProductListSerializer(serializers.ModelSerializer):
             *read_only_fields,
             'name', 'description', 'category', 'cover',
             'retail_price', 'is_on_sale', 'sale_price',
-            'is_pre_sale', 'is_pre_sale_text',
+            'is_pre_sale', 'is_pre_sale_text', 'is_oos',
             'position',
         )
 
@@ -65,7 +65,7 @@ class ProductSerializer(ProductListSerializer):
             *read_only_fields,
             'name', 'description', 'category', 'cover',
             'retail_price', 'is_on_sale', 'sale_price',
-            'is_pre_sale', 'is_pre_sale_text', 'is_pre_sale_dt',
+            'is_pre_sale', 'is_pre_sale_text', 'is_pre_sale_dt', 'is_oos',
             'images', 'position', 'supplier_item_id',
             'color_group_pk', 'stage',
             'is_published', 'meta_title', 'meta_slug', 'meta_description'

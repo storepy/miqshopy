@@ -1,3 +1,4 @@
+
 import logging
 
 from django import http
@@ -198,6 +199,7 @@ class SupplierOrderViewset(ViewSetMixin, viewsets.ModelViewSet):
             item.url = url
             item.item_sn = p_data.get('productCode', '')
 
+        item.data = p_data
         item.cost = p_data.get('cost')
         item.category = p_data.get('category')
         item.save()
@@ -227,6 +229,7 @@ class SupplierOrderViewset(ViewSetMixin, viewsets.ModelViewSet):
                 **img_data, alt_text=name, position=position,
                 src=img_file_from_response(res, None, get_file_ext(cover))
             )
+        return
 
         if imgs := product_data.get('imgs'):
             product.images.all().delete()

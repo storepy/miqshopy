@@ -44,33 +44,6 @@
       </a>
     </div>
     {% endfor %}
-
-    {% for cat in categories %}
-    <div class="item w-25 w-md-15">
-      <a href="{{cat.detail_path}}" class="" title="{{cat.name}}">
-        {{cat.cover.render_thumb_sq}}
-        <div class="info">{{cat.name}}</div>
-      </a>
-    </div>
-    {% endfor %}
-
-    {% for cat in categories %}
-    <div class="item w-25 w-md-15">
-      <a href="{{cat.detail_path}}" class="" title="{{cat.name}}">
-        {{cat.cover.render_thumb_sq}}
-        <div class="info">{{cat.name}}</div>
-      </a>
-    </div>
-    {% endfor %}
-
-    {% for cat in categories %}
-    <div class="item w-25 w-md-15">
-      <a href="{{cat.detail_path}}" class="" title="{{cat.name}}">
-        {{cat.cover.render_thumb_sq}}
-        <div class="info">{{cat.name}}</div>
-      </a>
-    </div>
-    {% endfor %}
   </div>
   </div>
 </section>  
@@ -158,12 +131,20 @@
   }
 
   .p-category-links{
+   
   }
   
   .p-category-links-inner{
-    width:100%;
-    overflow-y: scroll;
-    display:inline-grid;
+     overflow-x: auto;
+    overflow-y: hidden;
+    display: block;
+    white-space: nowrap;
+  }
+
+  .p-category-links .item{
+    display: inline-block;
+    margin-right: 8px;
+    vertical-align: bottom;
   }
 
   .p-category-links img{

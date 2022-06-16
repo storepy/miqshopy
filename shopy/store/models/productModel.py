@@ -66,6 +66,7 @@ class Product(BaseModelMixin):
     #
     # is_available = models.BooleanField(_("Is on sale"), default=False)
     is_on_sale = models.BooleanField(_("Is on sale"), default=False)
+    is_oos = models.BooleanField(_("Is out of stock"), default=False)
     sale_price = models.DecimalField(
         max_digits=10, decimal_places=2, null=True, blank=True,
         validators=[MinValueValidator(0)])

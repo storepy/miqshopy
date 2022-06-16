@@ -46,7 +46,7 @@ def get_product_url(prod: 'Product') -> str:
 def getProductSerializer(*, fields: tuple = None):
     _fields = (
         'meta_slug', 'url', 'cover',
-        'name', 'name_truncated', 'price',
+        'name', 'name_truncated', 'price', 'is_oos',
         'is_pre_sale', 'retail_price', 'is_on_sale', 'sale_price',
         'sizes'
     )

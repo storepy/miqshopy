@@ -11,8 +11,8 @@ __all__ = ('SupplierItemSerializer', 'SupplierOrderSerializer')
 class SupplierItemSerializer(ModelSerializer):
     class Meta:
         model = SupplierItem
-        read_only_fields = ('slug', 'created', 'updated',)
-        fields = ('item_sn', 'category', 'url', 'cost', *read_only_fields)
+        read_only_fields = ('slug', 'created', 'updated', 'data')
+        fields = ('item_sn', 'category', 'url', 'cost', * read_only_fields)
 
 
 class SupplierOrderSerializer(ModelSerializer):

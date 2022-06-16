@@ -41,4 +41,5 @@ class CategoryView(ViewMixin, ListView):
         self.category = get_object_or_404(
             Category.objects.published().has_products(),
             meta_slug=sp)
-        return self.category.products.published()
+        return self.category.products.published()\
+            .order_by('is_oos', 'stage', 'position', '-created', 'name')
