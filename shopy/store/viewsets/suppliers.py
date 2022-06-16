@@ -229,7 +229,6 @@ class SupplierOrderViewset(ViewSetMixin, viewsets.ModelViewSet):
                 **img_data, alt_text=name, position=position,
                 src=img_file_from_response(res, None, get_file_ext(cover))
             )
-        return
 
         if imgs := product_data.get('imgs'):
             product.images.all().delete()
