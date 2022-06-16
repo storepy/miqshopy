@@ -1,12 +1,16 @@
 from django.urls import path
+from django.views.decorators.csrf import csrf_exempt
 
 from . import views
-
+from ..store.viewsets.suppliers import add_order_feed
 
 app_name = 'shop'
 
 
 urlpatterns = [
+    path(
+        f'{app_name}/feed/<slug:order_slug>/',
+        csrf_exempt(add_order_feed), name='product_feed'),
     path(
         f'{app_name}/fb-products/',
         views.ProductsFbDataFeed.as_view(), name='fb_products'),

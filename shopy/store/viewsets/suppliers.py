@@ -1,8 +1,11 @@
 
+
+import json
 import logging
 
 from django import http
 from django.utils.text import slugify
+from django.contrib.auth import get_user_model
 from django.utils.translation import gettext_lazy as _
 
 from rest_framework.decorators import action
@@ -17,6 +20,8 @@ from miq.core.models import Currencies, Currency
 from miq.core.permissions import DjangoModelPermissions
 from miq.core.utils import get_file_ext, download_img_from_url, img_file_from_response
 
+from ..utils_crawler import clean_product_name
+
 
 from ..crawler import Crawler
 from ..serializers import SupplierOrderSerializer
@@ -25,28 +30,99 @@ from ..models import SupplierOrder, SupplierItem
 
 from .mixins import ViewSetMixin
 
-
+User = get_user_model()
 log = logging.getLogger(__name__)
 loginfo = log.info
 logerror = log.error
-
-terms = [
-    'SHEIN', 'PETITE', 'SXY',
-    'PRETTYLITTLETHING', 'PRETTYLITTLETHING Shape - '
-]
-
-
-def clean_product_name(name: str) -> str:
-    for term in terms:
-        if term in name:
-            name = name.replace(term, '')
-    return name.strip()
 
 
 def estimate_retail_price(cost, frm=Currency.USD, to=Currency.XOF):
     if not cost:
         return 0
     return int(float(cost) * 2.6 * 600)
+
+
+def add_product_images(product, product_data: dict, user=None):
+    name = product_data.get('name')
+    img_data = {
+        # 'site': get_current_site(self.request),
+    }
+
+    if user:
+        img_data['user'] = user
+
+    position = 1
+    if (cover := product_data.get('cover')) and (res := download_img_from_url(cover)) and res.status_code == 200:
+        if product.cover:
+            product.cover.delete()
+
+        product.cover = ProductImage.objects.create(
+            **img_data, alt_text=name, position=position,
+            src=img_file_from_response(res, None, get_file_ext(cover))
+        )
+
+    if imgs := product_data.get('imgs'):
+        product.images.all().delete()
+        position = 1
+        for url in imgs:
+            res = download_img_from_url(url)
+            if not res or res.status_code != 200:
+                continue
+
+            position += 1
+            img = ProductImage.objects.create(
+                **img_data, alt_text=f'{name} {position}', position=position,
+                src=img_file_from_response(res, None, get_file_ext(url))
+            )
+            product.images.add(img)
+
+
+def add_product_attributes(product, product_data: dict):
+    attrs = product.attributes
+    for _attr in product_data.get('attrs'):  # type: dict
+        name = _attr.get('name').lower()  # type: str
+        value = _attr.get('value')  # type: str
+        if attrs.filter(name=name).exists():
+            attr = attrs.get(name=name)  # type: ProductAttribute
+            if attr.value != value:
+                attr.value = value
+                attr.save()
+
+        else:
+            attr = ProductAttribute\
+                .objects.create(product=product, name=name, value=value)
+
+
+def add_shein_product_to_order(order, data, user=None, url=None):
+    p_name = clean_product_name(data.get('name'))
+    goods_id = data.get('id')
+
+    qs = Product.objects
+    if qs.filter(supplier_item_id=goods_id).exists():
+        product = qs.get(supplier_item_id=goods_id)
+    else:
+        product = qs.create(
+            supplier=order.supplier, name=p_name,
+            description=data.get('description', ''),
+            meta_title=p_name, meta_slug=slugify(p_name),
+            supplier_item_id=goods_id,
+            retail_price=estimate_retail_price(data.get('cost', 0))
+        )
+        add_product_attributes(product, data)
+        add_product_images(product, data, user=user)
+        product.save()
+
+    item, new = SupplierItem.objects.get_or_create(order=order, product=product)
+    if new:
+        if url:
+            item.url = url
+
+        item.item_sn = data.get('productCode', '')
+
+    item.data = data
+    item.cost = data.get('cost')
+    item.category = data.get('category')
+    item.save()
 
 
 class SupplierOrderViewset(ViewSetMixin, viewsets.ModelViewSet):
@@ -174,10 +250,13 @@ class SupplierOrderViewset(ViewSetMixin, viewsets.ModelViewSet):
                 {'data': _('can not perform this action')}
             )
 
+        order = self.get_object()
+
+        add_shein_product_to_order(order, p_data, url=url, user=self.request.user)
+        return self.retrieve(request, *args, **kwargs)
+
         p_name = clean_product_name(p_data.get('name'))
         goods_id = p_data.get('id')
-
-        order = self.get_object()
 
         qs = Product.objects
         if qs.filter(supplier_item_id=goods_id).exists():
@@ -262,3 +341,15 @@ class SupplierOrderViewset(ViewSetMixin, viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         return serializer.save()
+
+
+def add_order_feed(request, *args, **kwargs):
+    payload = json.loads(request.body)
+
+    order = SupplierOrder.objects.filter(slug=kwargs.get('order_slug'))
+    if not order.exists():
+        return http.JsonResponse({'order_slug': 'Invalid order'}, status=404)
+
+    add_shein_product_to_order(order.first(), payload, url=payload.get('url'), user=User.objects.first())
+
+    return http.JsonResponse({'ok': True})
