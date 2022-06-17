@@ -6,10 +6,10 @@
 
 <meta property="og:title" content="{{product.title}}" />
 <meta property="og:type" content="product" />
-<meta property="og:url" content="https://www.aritzia.com/us/en/product/melina-pant/81518411.html" />
-<meta property="og:image" content="https://aritzia.scene7.com/is/image/Aritzia/large/f21_04_a06_81518_23349_on_a.jpg" />
+<meta property="og:url" content="{{ request.scheme }}://{{ request.META.HTTP_HOST }}{{request.path}}" />
+<meta property="og:image" content="{{ request.scheme }}://{{ request.META.HTTP_HOST }}{{ product.cover.src.url }}" />
 <meta property="og:site_name" content="{{site.name}}" />
-<meta property="og:description" content="{% firstof object.meta_description object.description  %}" />
+<meta property="og:description" content="{% firstof object.meta_description object.description %}" />
 <meta property="og:price:amount" content="{{object.get_price}}" />
 <meta property="og:price:standard_amount" content="{{object.get_price}}" />
 <meta property="og:price:currency" content="{{site.shop.currency}}" />
