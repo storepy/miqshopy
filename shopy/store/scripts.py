@@ -6,23 +6,46 @@ import requests
 from utils_crawler import shein_url_to_data
 
 
-api = 'http://127.0.0.1:8000/shop/feed/{order_slug}/'
-
-
 s = requests.Session()
-s.get('http://127.0.0.1:8000/')
 
-order_slug = 'f860f375-6c07-4c6d-8209-6e1d358d9cc6'
+"""
+const getOrderLinks = () => {
+  const r = document.getElementsByClassName('ga-order-goods');
+  const links = [];
+
+  let txt = '';
+  Array.from(r).forEach((i) => {
+    const href = i.getAttribute('href');
+    links.push(`${href}`);
+    txt += `"${href}",`;
+  });
+
+  txt += '';
+  console.log(txt);
+  return links;
+};
+"""
+
+domain = 'http://127.0.0.1:8000'
+domain = 'http://feminity.africa'
+
+order_slug = 'f482d031-61f4-437e-93d8-fcf4217a9be9'  # local
+order_slug = ''
+
+api = f'{domain}/shop/feed/{order_slug}/'
 
 p_ = [
-    ''
 ]
 
 
-def post(url, order_slug):
-    api_url = api.format(order_slug=order_slug)
+def post(url):
+    api_url = api
 
     data = shein_url_to_data(url)
+    if not data:
+        print('Data ERROR', data)
+        return
+
     r = s.post(api_url, json=data)
     if r.status_code == 200:
         print(f': ADDED : {url}')
@@ -35,6 +58,6 @@ for link in p_:
     if not link:
         continue
 
-    post(link, order_slug)
+    post(link)
     if len(p_) > 1:
         time.sleep(random.randint(1, 5))
