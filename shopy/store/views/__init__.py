@@ -20,10 +20,13 @@ class ShopStaffIndexView(IndexView):
         data = {
             'orders': {'count': SupplierOrder.objects.count()},
             'products': {'count': Product.objects.count()},
-            'cats': {'count': Category.objects.count()},
+            'cats': {
+                'count': Category.objects.count(),
+                'cat_count': list(Product.objects.all().by_category_count())
+            },
             'currencies': Currencies,
             'suppliers': SupplierChoices,
-            'stages': ProductStages
+            'stages': ProductStages,
         }
 
         setting = ShopSetting.objects.filter(site=get_current_site(self.request))
