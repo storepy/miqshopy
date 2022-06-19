@@ -92,6 +92,9 @@ class SupplierOrder(BaseModelMixin):
 
     objects = SupplierOrderManager()
 
+    def get_category_count(self):
+        return self.products.all().by_category_count()
+
     def get_avg_cost(self):
         return self.items.aggregate(Avg('cost')).get('cost__avg')
 

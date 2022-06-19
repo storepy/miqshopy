@@ -2,6 +2,7 @@
 
 import json
 import logging
+from unicodedata import category
 
 from django import http
 from django.utils.text import slugify
@@ -25,7 +26,7 @@ from ..utils_crawler import clean_product_name
 
 from ..crawler import Crawler
 from ..serializers import SupplierOrderSerializer
-from ..models import Product, ProductAttribute, ProductImage, ProductStages
+from ..models import Product, ProductAttribute, ProductImage, ProductStages, Category
 from ..models import SupplierOrder, SupplierItem
 
 from .mixins import ViewSetMixin
@@ -135,6 +136,23 @@ class SupplierOrderViewset(ViewSetMixin, viewsets.ModelViewSet):
     #
 
     crawler = Crawler()
+
+    @action(methods=['post'], detail=True, url_path=r'batch')
+    def batch(self, request, *args, **kwargs):
+        slugs = request.data.get('slugs')
+
+        if not isinstance(slugs, list):
+            raise serializers.ValidationError({'slugs': 'invalid'})
+
+        order = self.get_object()
+        category = request.data.get('category')
+        qs = order.products.filter(slug__in=slugs)
+
+        if qs.exists():
+            cat = Category.objects.filter(slug=category).first()
+            qs.all().update(category=cat)
+
+        return self.retrieve(request, *args, **kwargs)
 
     @action(methods=['patch', 'delete'], detail=True, url_path=r'item/(?P<product_slug>[\w-]+)')
     def item(self, request, *args, product_slug: str = None, **kwargs):
@@ -290,6 +308,8 @@ class SupplierOrderViewset(ViewSetMixin, viewsets.ModelViewSet):
         r.data['categories'] = self.get_category_options()
         r.data['currencies'] = Currencies
         r.data['stages'] = ProductStages
+
+        r.data['by_categories'] = self.get_object().get_category_count()
         return r
 
     def add_product_images(self, product, product_data: dict):

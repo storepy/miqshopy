@@ -7,7 +7,12 @@ from django.db.models.functions import Concat
 
 
 class ProductQueryset(models.QuerySet):
+
+    def by_category_count(self):
+        return self.values('category__name').order_by('category__name').annotate(count=Count('category__name'))
+
     # for search
+
     def by_name(self, value):
         if not isinstance(value, str):
             return self.none()
