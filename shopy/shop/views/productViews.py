@@ -239,7 +239,9 @@ class FBSerializer(serializers.ModelSerializer):
         link = self._request.build_absolute_uri(get_product_url(inst))
 
         if (num := s.whatsapp_number):
-            return inst.get_whatsapp_link(num, self._request)
+            u = inst.get_whatsapp_link(num, self._request)
+            print(u, '\n')
+            return u
 
         return link
 

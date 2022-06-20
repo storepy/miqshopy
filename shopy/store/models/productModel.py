@@ -215,7 +215,7 @@ class Product(BaseModelMixin):
             'text': f'Coucou!\nCet article est il toujours disponible?\n{link}',
         })
 
-        return f'https://wa.me/{number}{param}'
+        return f'https://wa.me/{number}?{param}'
 
     def get_is_public(self):
         return self.category and self.category.is_published\
