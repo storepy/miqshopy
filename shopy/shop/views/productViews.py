@@ -194,7 +194,7 @@ class FBSerializer(serializers.ModelSerializer):
             return "Ce produit n'est plus disponible"
 
         txt = ''
-        sizes = inst.sizes.exclude(code='ONESIZE')
+        sizes = inst.sizes.exclude(code='onesize')
         if sizes.count() > 0:
             txt += 'Disponible en tailles: '
             for size in sizes.all():
