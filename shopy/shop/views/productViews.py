@@ -1,8 +1,9 @@
 import csv
 
 from django.http import HttpResponse
+
 from django.views.generic import View
-from django.shortcuts import get_object_or_404
+from django.shortcuts import get_object_or_404, redirect
 from django.contrib.sites.shortcuts import get_current_site
 
 from rest_framework import serializers
@@ -14,7 +15,7 @@ from miq.core.serializers import serialize_context_pagination
 
 from shopy.store.models import Product
 
-from ..serializers import ProductDetailSerializer, ProductListSerializer, get_product_url
+from ..serializers import ProductDetailSerializer, ProductListSerializer
 from ..serializers import category_to_dict, get_category_url
 from ..utils import product_to_jsonld, get_published_categories
 
@@ -27,6 +28,16 @@ price_ranges = ['5000', '10000', '25000', '50000']
 class ProductView(ViewMixin, DetailView):
     model = Product
     template_name = 'shop/product.django.html'
+
+    def dispatch(self, request, *args, **kwargs):
+        r = request.GET.get('r')
+        if r == '1':
+            p = self.get_object()
+            s = SiteSetting.objects.get(site=get_current_site(request))
+            if (num := s.whatsapp_number):
+                link = p.get_whatsapp_link(num, request)
+                return redirect(link)
+        return super().dispatch(request, *args, **kwargs)
 
     def get_object(self, *args, **kwargs):
         return get_object_or_404(
@@ -235,15 +246,7 @@ class FBSerializer(serializers.ModelSerializer):
 #
 
     def get_link(self, inst):
-        s = SiteSetting.objects.get(site=get_current_site(self._request))
-        link = self._request.build_absolute_uri(get_product_url(inst))
-
-        if (num := s.whatsapp_number):
-            u = inst.get_whatsapp_link(num, self._request)
-            print(u, '\n')
-            return u
-
-        return link
+        return f'{inst.path(request=self._request)}?r=1&source=fb&medium=shoplink&campaign=profile'
 
     def get_image_link(self, inst):
         if inst.cover:
