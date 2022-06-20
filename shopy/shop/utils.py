@@ -7,10 +7,9 @@ from django.contrib.sites.shortcuts import get_current_site
 
 import miq
 import shopy
+
 from shopy.store.utils import intcomma
 from shopy.store.models import Category
-
-from .serializers import get_product_url
 
 
 # https://www.facebook.com/business/help/120325381656392?id=725943027795860
@@ -23,7 +22,7 @@ def get_published_categories():
 
 def product_to_jsonld(product: 'shopy.models.Product', request) -> str:
     site = get_current_site(request)
-    url = get_product_url(product)
+    url = product.path(request=request)
     info = {
         "@context": "http://schema.org", "@type": "Product",
         "brand": brand_to_jsonld(request, site),

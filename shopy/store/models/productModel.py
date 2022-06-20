@@ -1,12 +1,15 @@
+from urllib.parse import urlencode
 from decimal import Decimal
 
 from django.db import models
 from django.utils import timezone
 
+from django.urls import reverse_lazy
 from django.utils.text import capfirst
 # from django.utils.text import slugify
 from django.core.validators import MinValueValidator
 from django.utils.translation import gettext_lazy as _
+
 
 from miq.core.models import BaseModelMixin
 from miq.core.utils import get_text_choices, truncate_str
@@ -196,6 +199,23 @@ class Product(BaseModelMixin):
 
     def supplier_item(self):
         return self.supplier_items.filter(product__slug=self.slug).first()
+
+    def path(self, request=None):
+        if(self.get_is_public()):
+            path = reverse_lazy('shopy:product', args=[self.category.meta_slug, self.meta_slug])
+            if request:
+                return request.build_absolute_uri(path)
+            return path
+
+    def get_whatsapp_link(self, number, request):
+        if not number or not request:
+            return
+        link = request.build_absolute_uri(self.path(request=request))
+        param = urlencode({
+            'text': f'Coucou!\nCet article est il toujours disponible?\n{link}',
+        })
+
+        return f'https://wa.me/{number}{param}'
 
     def get_is_public(self):
         return self.category and self.category.is_published\

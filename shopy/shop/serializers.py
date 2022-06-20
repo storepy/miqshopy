@@ -1,3 +1,4 @@
+
 from django.db import models
 from django.urls import reverse_lazy
 from django.utils.text import capfirst
@@ -43,9 +44,9 @@ def get_product_url(prod: 'Product') -> str:
     return ''
 
 
-def getProductSerializer(*, fields: tuple = None):
+def getProductSerializer(*, fields: tuple = None, request=None, whatsapp_number=None):
     _fields = (
-        'meta_slug', 'url', 'cover',
+        'meta_slug', 'url', 'cover', 'shop_link',
         'name', 'name_truncated', 'price', 'is_oos',
         'is_pre_sale', 'retail_price', 'is_on_sale', 'sale_price',
         'sizes'
@@ -57,7 +58,8 @@ def getProductSerializer(*, fields: tuple = None):
             fields = _fields
 
         price = serializers.SerializerMethodField()
-        url = serializers.SerializerMethodField()
+        shop_link = serializers.SerializerMethodField()
+        url = serializers.CharField(source='path', read_only=True)
         retail_price = serializers.SerializerMethodField()
         sale_price = serializers.SerializerMethodField()
         cover = getImageSerializer(modelCls=ProductImage)(read_only=True)
@@ -75,8 +77,8 @@ def getProductSerializer(*, fields: tuple = None):
         def get_sale_price(self, inst: 'Product'):
             return price_to_dict(inst.sale_price)
 
-        def get_url(self, inst: 'Product'):
-            return get_product_url(inst)
+        def get_shop_link(self, inst: 'Product'):
+            return inst.get_whatsapp_link(request, whatsapp_number)
 
         def get_price(self, inst: 'Product'):
             return price_to_dict(inst.get_price())
@@ -98,7 +100,7 @@ ProductListSerializer = getProductSerializer()
 ProductDetailSerializer = getProductSerializer(
     fields=(
         'description', 'is_pre_sale_text', 'is_pre_sale_dt',
-        'images', 'has_attributes', 'attributes'
+        'images', 'has_attributes', 'attributes',
     )
 )
 

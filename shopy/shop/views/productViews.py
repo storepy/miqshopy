@@ -3,10 +3,12 @@ import csv
 from django.http import HttpResponse
 from django.views.generic import View
 from django.shortcuts import get_object_or_404
+from django.contrib.sites.shortcuts import get_current_site
 
 from rest_framework import serializers
 
 from miq.core.middleware import local
+from miq.core.models import SiteSetting
 from miq.core.views.generic import ListView, DetailView
 from miq.core.serializers import serialize_context_pagination
 
@@ -39,6 +41,9 @@ class ProductView(ViewMixin, DetailView):
         obj = context.get('object')
         if not obj:
             return context
+
+        # i = FBSerializer(instance=obj, context={"request": self.request})
+        # print('ok', i.data.get('link'))
 
         category = obj.category
         context['title'] = obj.meta_title + f' - {category.name}'
@@ -126,8 +131,17 @@ FB
 
 
 class FBSerializer(serializers.ModelSerializer):
+
+    def __init__(self, instance=None, **kwargs):
+        if not kwargs.get('context', {}).get('request'):
+            raise Exception("Request required! -> FBSerializer(instance, context={'request': request, 'size': size})")
+
+        super().__init__(instance, **kwargs)
+        # context = {"request": request})
+
     # https://developers.facebook.com/docs/marketing-api/catalog/reference#supported-fields
     # color, status(active,archived), manufacturer_info
+
     class Meta:
         model = Product
         fields = (
@@ -143,6 +157,7 @@ class FBSerializer(serializers.ModelSerializer):
 
     id = serializers.CharField(source='meta_slug', read_only=True)
     title = serializers.CharField(source='name', read_only=True)
+    description = serializers.SerializerMethodField()
     price = serializers.SerializerMethodField()
     brand = serializers.SerializerMethodField()
     link = serializers.SerializerMethodField()
@@ -154,12 +169,14 @@ class FBSerializer(serializers.ModelSerializer):
 
     # image_link: 1024 x 1024/1200 x 628,
     # 20 max/https://www.fb.com/t_shirt_2.jpg,https://www.fb.com/t_shirt_3.jpg
+
     image_link = serializers.SerializerMethodField()
     google_product_category = serializers.SerializerMethodField()
     gender = serializers.SerializerMethodField()
     inventory = serializers.SerializerMethodField()
     condition = serializers.CharField(source='get_condition', read_only=True)
     availability = serializers.CharField(source='get_availability', read_only=True)
+#
 
     def get_google_product_category(self, inst):
         if (cat := getattr(inst.category, 'google_product_category', None)) and isinstance(cat, str):
@@ -171,6 +188,19 @@ class FBSerializer(serializers.ModelSerializer):
         if not size:
             return
         return inst.meta_slug
+
+    def get_description(self, inst):
+        if inst.is_oos:
+            return "Ce produit n'est plus disponible"
+
+        txt = ''
+        sizes = inst.sizes
+        if sizes.count() > 0:
+            txt += 'Disponible en tailles: '
+            for size in sizes.all():
+                txt += f'{size.code} '.upper()
+
+        return txt or inst.description
 
     def get_inventory(self, inst):
         size = self.context.get('size')
@@ -200,9 +230,16 @@ class FBSerializer(serializers.ModelSerializer):
         site = local.site
         if site and (s := site.shopy):
             return f'{price} {s.currency}'
+#
 
     def get_link(self, inst):
-        return self._request.build_absolute_uri(get_product_url(inst))
+        s = SiteSetting.objects.get(site=get_current_site(self._request))
+        link = self._request.build_absolute_uri(get_product_url(inst))
+
+        if (num := s.whatsapp_number):
+            return inst.get_whatsapp_link(num, self._request)
+
+        return link
 
     def get_image_link(self, inst):
         if inst.cover:
@@ -220,7 +257,6 @@ class FBSerializer(serializers.ModelSerializer):
 
     def get_product_type(self, inst):
         return 2271
-        # return inst.category.name
 
     def get_brand(self, inst):
         site = getattr(local, 'site')
