@@ -53,9 +53,6 @@ class ProductView(ViewMixin, DetailView):
         if not obj:
             return context
 
-        # i = FBSerializer(instance=obj, context={"request": self.request})
-        # print('ok', i.data.get('link'))
-
         category = obj.category
         context['title'] = obj.meta_title + f' - {category.name}'
         context['meta_description'] = obj.meta_description

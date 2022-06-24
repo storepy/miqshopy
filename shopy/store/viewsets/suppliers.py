@@ -303,6 +303,14 @@ class SupplierOrderViewset(ViewSetMixin, viewsets.ModelViewSet):
 
         return self.retrieve(request, *args, **kwargs)
 
+    def update(self, request, *args, **kwargs):
+        r = super().update(request, *args, **kwargs)
+        stage = request.data.get('stage')
+        if stage:
+            self.get_object().products.update(stage=stage)
+
+        return r
+
     def retrieve(self, *args, **kwargs):
         r = super().retrieve(*args, **kwargs)
         r.data['categories'] = self.get_category_options()

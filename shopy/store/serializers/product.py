@@ -16,7 +16,7 @@ class ProductListSerializer(serializers.ModelSerializer):
             'slug', 'name_truncated', 'category_data', 'cover_data',
             'retail_price_data', 'sale_price_data', 'size_count', 'supplier_item',
             #
-            'dt_published', 'is_published'
+            'stage', 'dt_published', 'is_published'
 
         )
         fields = (
