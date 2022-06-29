@@ -2,7 +2,6 @@
 
 import json
 import logging
-from unicodedata import category
 
 from django import http
 from django.utils.text import slugify

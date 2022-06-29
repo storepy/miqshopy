@@ -9,7 +9,7 @@ from utils_crawler import shein_url_to_data
 s = requests.Session()
 
 """
-const getOrderLinks = () => {
+const getSheinOrderProductLinks = () => {
   const r = document.getElementsByClassName('ga-order-goods');
   const links = [];
 
