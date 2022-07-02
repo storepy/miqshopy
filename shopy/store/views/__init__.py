@@ -33,7 +33,30 @@ class ShopStaffIndexView(IndexView):
         if setting.exists():
             data['shopy_settings'] = ShopSettingSerializer(setting.first()).data
 
+        hits = Product.objects.all().hits()
+        if hits.exists():
+            today = hits.today()
+
+            data['hits'] = {
+                'count': today.count(),
+                'yesterday': hits.yesterday().count(),
+                'items': [
+                    {
+                        'session': i.session,
+                        'path': i.path,
+                        'source_id': i.source_id,
+                        'user_agent': i.user_agent,
+                        'referrer': i.referrer,
+                        'method': i.method,
+                        'response_status': i.response_status,
+                    } for i in today.all()[:100]
+                ]
+            }
+
         self.update_sharedData(context, data)
+
+        # from pprint import pprint
+        # pprint(data)
 
         return context
 
@@ -58,5 +81,4 @@ class TrackrListView(ListView):
         data = {
             'qs': TrackItemSerializer(qs, many=True).data
         }
-        print(data)
         return JsonResponse(data)

@@ -1,4 +1,5 @@
 import datetime as dt
+from django.apps import apps
 
 from django.db import models
 from django.db.models import Count
@@ -7,6 +8,14 @@ from django.db.models.functions import Concat
 
 
 class ProductQueryset(models.QuerySet):
+
+    def hits(self):
+        if not apps.is_installed('miq.analytics'):
+            return self.none()
+
+        from miq.analytics.models import Hit
+
+        return Hit.objects.filter(path__contains='/shop/')  # type: models.Queryset
 
     def by_category_count(self):
         return self.values('category__name').order_by('category__name').annotate(count=Count('category__name'))

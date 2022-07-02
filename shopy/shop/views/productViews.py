@@ -148,7 +148,7 @@ class FBSerializer(serializers.ModelSerializer):
         # context = {"request": request})
 
     # https://developers.facebook.com/docs/marketing-api/catalog/reference#supported-fields
-    # color, status(active,archived), manufacturer_info
+    # color, status(active,archived), manufacturer_info,material
 
     class Meta:
         model = Product
@@ -160,7 +160,7 @@ class FBSerializer(serializers.ModelSerializer):
             'sale_price', 'additional_image_link', 'product_type',
             'size', 'gender', 'inventory',
             'item_group_id',
-            'google_product_category',
+            'google_product_category', 'custom_label_0',
         )
 
     id = serializers.CharField(source='meta_slug', read_only=True)
@@ -184,6 +184,10 @@ class FBSerializer(serializers.ModelSerializer):
     inventory = serializers.SerializerMethodField()
     condition = serializers.CharField(source='get_condition', read_only=True)
     availability = serializers.CharField(source='get_availability', read_only=True)
+
+    # Use for filtering products to sets
+    custom_label_0 = serializers.CharField(source='category.name', read_only=True)
+    # custom_label_0 = serializers.SerializerMethodField()
 #
 
     def get_google_product_category(self, inst):
