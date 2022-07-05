@@ -35,13 +35,4 @@ class IndexView(TemplateView):
         # ctx['occasions'] = Category.objects.published()\
         # .order_by('created')[:10]
 
-        ctx['brands'] = [
-            {'name': 'Shein', 'logo': ''},
-            {'name': 'PrettyLittleThing', 'logo': ''},
-            {'name': 'Missguided', 'logo': ''},
-            {'name': 'Fashionnova', 'logo': ''},
-            {'asos': 'Macys', 'logo': ''},
-            {'name': 'Macys', 'logo': ''},
-        ]
-
         return ctx

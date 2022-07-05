@@ -46,7 +46,7 @@ class CategoryViewset(ViewSetMixin, viewsets.ModelViewSet):
         return self.retrieve(self, request, *args, **kwargs)
 
     def get_queryset(self):
-        return super().get_queryset().products_count().order_by('-created')
+        return super().get_queryset().products_count().order_by('position', '-created', 'name')
 
     def perform_create(self, ser):
         name = self.request.data.get('name')

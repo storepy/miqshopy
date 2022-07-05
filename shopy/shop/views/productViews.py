@@ -67,10 +67,10 @@ class ProductView(ViewMixin, DetailView):
             ],
         }
 
-        if (similar := obj.category.products.published().exclude(pk=obj.id))\
+        if (similar := obj.category.products.published().exclude(pk=obj.id).filter(is_oos=False))\
                 and similar.exists():
             data['similar'] = [
-                ProductListSerializer(item).data for item in similar.all()[:4]
+                ProductListSerializer(item).data for item in similar.order_by('?')[:4]
             ]
 
         self.update_sharedData(context, data)
@@ -159,7 +159,7 @@ class FBSerializer(serializers.ModelSerializer):
             # optional
             'sale_price', 'additional_image_link', 'product_type',
             'size', 'gender', 'inventory',
-            'item_group_id',
+            'item_group_id', 'age_group', 'color',
             'google_product_category', 'custom_label_0',
         )
 
@@ -174,6 +174,7 @@ class FBSerializer(serializers.ModelSerializer):
     product_type = serializers.SerializerMethodField()
     item_group_id = serializers.SerializerMethodField()
     size = serializers.SerializerMethodField()
+    color = serializers.SerializerMethodField()
 
     # image_link: 1024 x 1024/1200 x 628,
     # 20 max/https://www.fb.com/t_shirt_2.jpg,https://www.fb.com/t_shirt_3.jpg
@@ -184,11 +185,18 @@ class FBSerializer(serializers.ModelSerializer):
     inventory = serializers.SerializerMethodField()
     condition = serializers.CharField(source='get_condition', read_only=True)
     availability = serializers.CharField(source='get_availability', read_only=True)
+    age_group = serializers.SerializerMethodField()
 
     # Use for filtering products to sets
     custom_label_0 = serializers.CharField(source='category.name', read_only=True)
-    # custom_label_0 = serializers.SerializerMethodField()
 #
+
+    def get_age_group(self):
+        """
+        The age group the item is targeted towards. Accepted values: adult, all ages, teen, kids, toddler, infant, newborn.
+        """
+
+        return 'adult'
 
     def get_google_product_category(self, inst):
         if (cat := getattr(inst.category, 'google_product_category', None)) and isinstance(cat, str):
@@ -224,6 +232,12 @@ class FBSerializer(serializers.ModelSerializer):
 
     def get_gender(self, inst):
         return 'female'
+
+    def get_color(self, inst):
+        color = inst.attributes.filter(name__in=['color', 'couleur'])
+        if not color.exists():
+            return
+        return color.first().value
 
     def get_size(self, inst):
         size = self.context.get('size')

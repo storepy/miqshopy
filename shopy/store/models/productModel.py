@@ -194,9 +194,6 @@ class Product(BaseModelMixin):
             models.Index(fields=['name', ], name='shopy_product_name_idx'),
         ]
 
-    # def has_attributes(self):
-    #     return self.attributes.count() > 0
-
     def supplier_item(self):
         return self.supplier_items.filter(product__slug=self.slug).first()
 

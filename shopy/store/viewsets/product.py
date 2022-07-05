@@ -13,7 +13,7 @@ from rest_framework.permissions import IsAdminUser
 
 from miq.core.permissions import DjangoModelPermissions
 
-from ..models import Product, ProductAttribute
+from ..models import Product, ProductAttribute, ProductStages
 from ..serializers import ProductSerializer, ProductListSerializer
 from ..serializers import ProductAttributeSerializer, ProductSizeSerializer
 
@@ -212,10 +212,12 @@ class ProductViewset(ViewSetMixin, viewsets.ModelViewSet):
     def list(self, request, *args, **kwargs):
         r = super().list(request, *args, **kwargs)
         r.data['categories'] = self.get_category_options()
+        r.data['stages'] = ProductStages
         return r
 
     def retrieve(self, *args, **kwargs):
         r = super().retrieve(*args, **kwargs)
+        r.data['stages'] = ProductStages
         r.data['categories'] = self.get_category_options()
         return r
 
