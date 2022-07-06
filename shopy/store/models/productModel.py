@@ -1,3 +1,4 @@
+
 from urllib.parse import urlencode
 from decimal import Decimal
 
@@ -146,6 +147,33 @@ class Product(BaseModelMixin):
     @property
     def name_truncated(self):
         return truncate_str(capfirst(self.name), length=30)
+
+    def get_hit_data(self):
+        data = super().get_hit_data()
+        data.update({
+            'name': self.name,
+            'img': None,
+            'price': f'{self.get_price()}',
+            'retail_price': f'{self.retail_price}',
+            'sale_price': f'{self.sale_price}' if self.is_on_sale else None,
+            'is_on_sale': self.is_on_sale,
+            'is_oos': self.is_oos,
+            'supplier': self.supplier,
+            'supplier_item_id': self.supplier_item_id,
+        })
+
+        if self.cover:
+            # from pprint import pprint
+            # pprint(self.cover.src.__dict__)
+            # data['img'] = self.img_2_base64(self.cover.src.url)
+            data['img'] = self.cover.src.url
+        return data
+
+    def img_2_base64(self, img_path):
+        import base64
+
+        with open(img_path) as image_file:
+            return base64.b64encode(image_file.read())
 
     def get_availability(self):
         """

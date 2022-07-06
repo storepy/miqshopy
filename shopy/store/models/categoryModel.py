@@ -46,6 +46,17 @@ class Category(BaseModelMixin):
 
     objects = CategoryManager()
 
+    def get_hit_data(self):
+        data = super().get_hit_data()
+        data.update({
+            'name': self.name,
+            'img': None,
+        })
+
+        if self.cover:
+            data['img'] = self.cover.src.url
+        return data
+
     def save(self, *args, **kwargs):
         if self.is_published and not self.dt_published:
             self.dt_published = timezone.now()
