@@ -4,9 +4,9 @@ import json
 import logging
 
 from django import http
-from django.db import models
 from django.utils.text import slugify
 from django.contrib.auth import get_user_model
+from django.utils.crypto import get_random_string
 from django.utils.translation import gettext_lazy as _
 
 from rest_framework.decorators import action
@@ -99,12 +99,14 @@ def add_shein_product_to_order(order, data, user=None, url=None):
     goods_id = data.get('id')
 
     qs = Product.objects
-    slug = slugify(p_name)
-    if qs.filter(
-            models.Q(supplier_item_id=goods_id) | models.Q(meta_slug=slug)).exists():
-        # product = qs.get(supplier_item_id=goods_id)
+    if qs.filter(supplier_item_id=goods_id).exists():
         product = qs.first()
     else:
+        slug = slugify(p_name)
+
+        if qs.filter(meta_slug=slug).exists():
+            slug += get_random_string(length=32)
+
         product = qs.create(
             supplier=order.supplier, name=p_name,
             description=data.get('description', ''),
@@ -375,6 +377,9 @@ class SupplierOrderViewset(ViewSetMixin, viewsets.ModelViewSet):
 
 
 def add_order_feed(request, *args, **kwargs):
+    if not request.method == 'POST':
+        return http.JsonResponse({'ok': True})
+
     payload = json.loads(request.body)
 
     order = SupplierOrder.objects.filter(slug=kwargs.get('order_slug'))
