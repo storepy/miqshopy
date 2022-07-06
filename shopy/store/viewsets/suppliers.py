@@ -4,6 +4,7 @@ import json
 import logging
 
 from django import http
+from django.db import models
 from django.utils.text import slugify
 from django.contrib.auth import get_user_model
 from django.utils.translation import gettext_lazy as _
@@ -98,13 +99,16 @@ def add_shein_product_to_order(order, data, user=None, url=None):
     goods_id = data.get('id')
 
     qs = Product.objects
-    if qs.filter(supplier_item_id=goods_id).exists():
-        product = qs.get(supplier_item_id=goods_id)
+    slug = slugify(p_name)
+    if qs.filter(
+            models.Q(supplier_item_id=goods_id) | models.Q(meta_slug=slug)).exists():
+        # product = qs.get(supplier_item_id=goods_id)
+        product = qs.first()
     else:
         product = qs.create(
             supplier=order.supplier, name=p_name,
             description=data.get('description', ''),
-            meta_title=p_name, meta_slug=slugify(p_name),
+            meta_title=p_name, meta_slug=slug,
             supplier_item_id=goods_id,
             retail_price=estimate_retail_price(data.get('cost', 0))
         )
