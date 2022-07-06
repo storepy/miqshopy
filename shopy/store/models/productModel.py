@@ -149,10 +149,15 @@ class Product(BaseModelMixin):
         return truncate_str(capfirst(self.name), length=30)
 
     def get_hit_data(self):
-        data = super().get_hit_data()
-        data.update({
-            'name': self.name,
+        data = {
             'img': None,
+            'cat_name': None,
+            'cat_slug': None,
+        }
+        data.update({
+            **super().get_hit_data(),
+            'name': self.name,
+            'slug': self.slug,
             'price': f'{self.get_price()}',
             'retail_price': f'{self.retail_price}',
             'sale_price': f'{self.sale_price}' if self.is_on_sale else None,
@@ -161,6 +166,12 @@ class Product(BaseModelMixin):
             'supplier': self.supplier,
             'supplier_item_id': self.supplier_item_id,
         })
+
+        if self.category:
+            data.update({
+                'cat_name': self.category.name,
+                'cat_slug': self.category.slug
+            })
 
         if self.cover:
             # from pprint import pprint

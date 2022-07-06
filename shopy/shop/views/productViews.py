@@ -191,7 +191,7 @@ class FBSerializer(serializers.ModelSerializer):
     custom_label_0 = serializers.CharField(source='category.name', read_only=True)
 #
 
-    def get_age_group(self):
+    def get_age_group(self, inst):
         """
         The age group the item is targeted towards. Accepted values: adult, all ages, teen, kids, toddler, infant, newborn.
         """
