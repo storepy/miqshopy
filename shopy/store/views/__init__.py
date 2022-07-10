@@ -1,3 +1,6 @@
+
+
+from django.db import models
 from django.contrib.sites.shortcuts import get_current_site
 from django.http import JsonResponse
 
@@ -33,30 +36,7 @@ class ShopStaffIndexView(IndexView):
         if setting.exists():
             data['shopy_settings'] = ShopSettingSerializer(setting.first()).data
 
-        hits = Product.objects.all().hits()
-        if hits.exists():
-            today = hits.today()
-
-            data['hits'] = {
-                'count': today.count(),
-                'yesterday': hits.yesterday().count(),
-                'items': [
-                    {
-                        'session': i.session,
-                        'path': i.path,
-                        'source_id': i.source_id,
-                        'user_agent': i.user_agent,
-                        'referrer': i.referrer,
-                        'method': i.method,
-                        'response_status': i.response_status,
-                    } for i in today.all()[:100]
-                ]
-            }
-
         self.update_sharedData(context, data)
-
-        # from pprint import pprint
-        # pprint(data)
 
         return context
 
@@ -82,3 +62,38 @@ class TrackrListView(ListView):
             'qs': TrackItemSerializer(qs, many=True).data
         }
         return JsonResponse(data)
+
+
+class Path:
+    def __init__(self, qs, *args, **kwargs):
+        from pprint import pprint
+        print(' == PATH ==')
+        self.qs = qs
+        wha = qs.filter(response_status=302)
+        # print('wha', wha.values('pk', 'ip'))
+        wha_ips = wha.values('ip').annotate(ip_count=models.Count('ip'))
+        pprint(wha.values('ip').distinct())
+        pprint(wha_ips)
+
+        hits = qs.filter(ip__in=wha_ips.values_list('ip', flat=True))
+        print(hits.count())
+        # pprint([p for p in self.sessions_by_path()])
+
+        # hits = qs.values('referrer').annotate(path_count=models.Count('path')).order_by('-path_count')
+
+        paths = qs.values('path').annotate(path_count=models.Count('path'))
+        print(paths.count())
+        s = paths.annotate(session_count=models.Count('session'))
+
+        # pprint([p for p in s])
+
+    # def top_referrings(self, count=10) -> list:
+    #     return Counter(self.referrings.values_list('path', flat=True))\
+    #         .most_common(count)
+
+    # def top_referrers(self, count=10) -> list:
+    #     return Counter(self.referrers.values_list('referrer', flat=True))\
+    #         .most_common(count)
+
+    def sessions_by_path(self):
+        return self.qs.values('path').annotate(session_count=models.Count('session'))
