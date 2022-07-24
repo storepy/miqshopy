@@ -261,7 +261,7 @@ class FBSerializer(serializers.ModelSerializer):
 #
 
     def get_link(self, inst):
-        return f'{inst.path(request=self._request)}?r=1&source=fb&medium=shoplink&campaign=profile'
+        return f'{inst.path(request=self._request)}?utm_source=ig&utm_medium=ig_shop&utm_campaign=profile'
 
     def get_image_link(self, inst):
         if inst.cover:
