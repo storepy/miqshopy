@@ -5,15 +5,15 @@ from django.contrib.sites.shortcuts import get_current_site
 
 from miq.core.utils import get_session
 
-from miq.orders.models import Cart
-from .serializers import CartSerializer
+from shopy.sales.models import Cart
+from shopy.sales.serializers import CartSerializer
 
 logger = logging.getLogger(__name__)
 loginfo = logger.info
 logerror = logger.error
 
 
-class OrderPyMiddleware(CurrentSiteMiddleware):
+class ShopMiddleware(CurrentSiteMiddleware):
     def __init__(self, get_response):
         self.get_response = get_response
 
@@ -41,14 +41,15 @@ class OrderPyMiddleware(CurrentSiteMiddleware):
 
         sD = ctx.get('sharedData')
         session = get_session(request)
-        if session.session_key and (cart_slug := session.get('_car_id')) and (cart := Cart.objects.filter(slug=cart_slug)) and cart.exists():
+        if session.session_key and (cart_slug := session.get('_cart')) and (cart := Cart.objects.filter(slug=cart_slug)) and cart.exists():
             cart = cart.first()
-            cart_data = CartSerializer(cart).data
             obj = response.context_data.get('object')
             if obj:
                 loginfo(f'ProductView[{obj.id}]')
 
-            sD.update({'cart': cart_data})
+            sD.update({
+                'cart': CartSerializer(cart).data
+            })
 
             loginfo(f'Session cart[{cart.id}]')
 
