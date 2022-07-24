@@ -185,6 +185,9 @@ class ProductViewset(ViewSetMixin, viewsets.ModelViewSet):
         qs = super().get_queryset()
         params = self.request.query_params
 
+        if(atc := params.get('atc')) and atc == '1':
+            qs = qs.published().exclude(is_oos=True).has_sizes()
+
         if(order_slug := params.get('supplier_order_slug')):
             if order_slug == '':
                 return qs.none()

@@ -298,7 +298,7 @@ class ProductsFbDataFeed(View):
         writer = csv.DictWriter(response, fieldnames=FBSerializer.Meta.fields)
         writer.writeheader()
 
-        qs = Product.objects.published()
+        qs = Product.objects.published().exclude(is_explicit=True)
         for product in qs:
             data = FBSerializer(product, context={"request": request}).data
 

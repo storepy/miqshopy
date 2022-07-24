@@ -2,6 +2,7 @@
 
 import json
 import logging
+import math
 
 from django import http
 from django.utils.text import slugify
@@ -40,7 +41,13 @@ logerror = log.error
 def estimate_retail_price(cost, frm=Currency.USD, to=Currency.XOF):
     if not cost:
         return 0
-    return int(float(cost) * 2.6 * 600)
+
+    usd2xof = 654.238
+    cost = float(cost)
+    # revenue(cost*2) + cpa(cost*2/5)
+    min_retail = (cost * 2) + (cost * (2 / 5))
+    return int(math.ceil(min_retail * usd2xof))
+    # return int(float(cost) * 2.6 * 600)
 
 
 def add_product_images(product, product_data: dict, user=None):

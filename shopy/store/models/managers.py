@@ -9,6 +9,12 @@ from django.db.models.functions import Concat
 
 class ProductQueryset(models.QuerySet):
 
+    def has_sizes(self):
+        from shopy.store.models import ProductSize
+
+        sizes = ProductSize.objects.exclude(quantity__lt=1)
+        return self.filter(id__in=sizes.values_list('product_id', flat=True))
+
     def hits(self):
         if not apps.is_installed('miq.analytics'):
             return self.none()

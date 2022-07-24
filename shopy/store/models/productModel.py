@@ -74,6 +74,10 @@ class Product(BaseModelMixin):
     sale_price = models.DecimalField(
         max_digits=10, decimal_places=2, null=True, blank=True,
         validators=[MinValueValidator(0)])
+    is_explicit = models.BooleanField(
+        _("Exclude from facebook commerce feed"),
+        default=False
+    )
 
     """
     DETAILS

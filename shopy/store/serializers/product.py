@@ -13,10 +13,10 @@ class ProductListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Product
         read_only_fields = (
-            'slug', 'name_truncated', 'category_data', 'cover_data',
+            'slug', 'name_truncated', 'category_data', 'cover_data', 'sizes',
             'retail_price_data', 'sale_price_data', 'size_count', 'supplier_item',
             #
-            'stage', 'dt_published', 'is_published'
+            'stage', 'dt_published', 'is_published', 'is_explicit'
 
         )
         fields = (
@@ -37,6 +37,7 @@ class ProductListSerializer(serializers.ModelSerializer):
     category = serializers.SlugRelatedField(
         slug_field="slug", queryset=Category.objects.all(), required=False)
     category_data = CategorySerializer(source='category', read_only=True)
+    sizes = ProductSizeSerializer(many=True, read_only=True)
 
     supplier_item = SupplierItemSerializer(read_only=True)
     size_count = serializers.IntegerField(source='sizes.count', read_only=True)
@@ -64,7 +65,7 @@ class ProductSerializer(ProductListSerializer):
         fields = (
             *read_only_fields,
             'name', 'description', 'category', 'cover',
-            'retail_price', 'is_on_sale', 'sale_price',
+            'retail_price', 'is_on_sale', 'sale_price', 'is_explicit',
             'is_pre_sale', 'is_pre_sale_text', 'is_pre_sale_dt', 'is_oos',
             'images', 'position', 'supplier_item_id',
             'color_group_pk', 'stage',
@@ -72,7 +73,6 @@ class ProductSerializer(ProductListSerializer):
         )
 
     stage_choices = serializers.JSONField(read_only=True)
-    sizes = ProductSizeSerializer(many=True, read_only=True)
     attributes = ProductAttributeSerializer(many=True, read_only=True)
     images = serializers.SlugRelatedField(
         slug_field="slug", queryset=ProductImage.objects.all(),
