@@ -16,7 +16,7 @@ class ProductListSerializer(serializers.ModelSerializer):
             'slug', 'name_truncated', 'category_data', 'cover_data', 'sizes',
             'retail_price_data', 'sale_price_data', 'size_count', 'supplier_item',
             #
-            'stage', 'dt_published', 'is_published', 'is_explicit'
+            'stage', 'dt_published', 'is_published',
 
         )
         fields = (
@@ -24,7 +24,7 @@ class ProductListSerializer(serializers.ModelSerializer):
             'name', 'description', 'category', 'cover',
             'retail_price', 'is_on_sale', 'sale_price',
             'is_pre_sale', 'is_pre_sale_text', 'is_oos',
-            'position',
+            'position', 'is_pinned', 'is_explicit'
         )
 
     # region fields
@@ -65,11 +65,11 @@ class ProductSerializer(ProductListSerializer):
         fields = (
             *read_only_fields,
             'name', 'description', 'category', 'cover',
-            'retail_price', 'is_on_sale', 'sale_price', 'is_explicit',
-            'is_pre_sale', 'is_pre_sale_text', 'is_pre_sale_dt', 'is_oos',
-            'images', 'position', 'supplier_item_id',
-            'color_group_pk', 'stage',
-            'is_published', 'meta_title', 'meta_slug', 'meta_description'
+            'retail_price', 'is_on_sale', 'sale_price',
+            'is_explicit', 'is_oos', 'is_pinned', 'is_published',
+            'is_pre_sale', 'is_pre_sale_text', 'is_pre_sale_dt',
+            'images', 'position', 'supplier_item_id', 'color_group_pk', 'stage',
+            'meta_title', 'meta_slug', 'meta_description'
         )
 
     stage_choices = serializers.JSONField(read_only=True)

@@ -197,7 +197,10 @@ class ProductViewset(ViewSetMixin, viewsets.ModelViewSet):
             qs = qs.by_name(q)
 
         if(cat := params.get('cat')) and cat != '':
-            qs = qs.filter(category__slug=cat)
+            if cat == 'no-cat':
+                qs = qs.filter(category__isnull=True)
+            else:
+                qs = qs.filter(category__slug=cat)
 
         if(presale := params.get('presale')) and presale != '':
             qs = qs.filter(is_pre_sale=True)
@@ -208,6 +211,10 @@ class ProductViewset(ViewSetMixin, viewsets.ModelViewSet):
         if(published := params.get('published')) and published != '':
             if published == 'include':
                 qs = qs.published()
+            if published == 'pinned':
+                qs = qs.filter(is_pinned=True)
+            if published == 'explicit':
+                qs = qs.filter(is_explicit=True)
             if published == 'exclude':
                 qs = qs.draft()
         return qs

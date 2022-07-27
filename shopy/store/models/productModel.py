@@ -107,6 +107,9 @@ class Product(BaseModelMixin):
     CONFIG
     """
 
+    # used to alter product collections order, along side position
+    is_pinned = models.BooleanField(_("Is pinned"), default=False)
+
     # use to group similar items with different colors
     color_group_pk = models.CharField(
         _("Color group identifier"), max_length=99,
