@@ -1,16 +1,14 @@
 
-from urllib.parse import urlencode
 from decimal import Decimal
+from urllib.parse import urlencode
 
 from django.db import models
 from django.utils import timezone
-
 from django.urls import reverse_lazy
 from django.utils.text import capfirst
 # from django.utils.text import slugify
 from django.core.validators import MinValueValidator
 from django.utils.translation import gettext_lazy as _
-
 
 from miq.core.models import BaseModelMixin
 from miq.core.utils import get_text_choices, truncate_str
@@ -85,9 +83,6 @@ class Product(BaseModelMixin):
 
     name = models.CharField(_("Name"), max_length=99)
     description = models.TextField(_("Description"), null=True, blank=True)
-    # quantity = models.PositiveIntegerField(
-    #     default=0, help_text='Enter quantity',
-    #     validators=[MinValueValidator(0)])
 
     """
     IMAGES
@@ -97,7 +92,8 @@ class Product(BaseModelMixin):
         f'{app_name}.ProductImage',
         verbose_name=_("Cover"), on_delete=models.SET_NULL, blank=True, null=True
     )
-    # Limit to 10
+
+    # TODO: Limit to 10
     images = models.ManyToManyField(
         f'{app_name}.ProductImage', blank=True,
         related_name='shopy_products'

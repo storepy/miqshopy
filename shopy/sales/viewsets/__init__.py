@@ -3,14 +3,13 @@ from rest_framework import viewsets, serializers
 from rest_framework.parsers import JSONParser
 from rest_framework.permissions import IsAdminUser
 from rest_framework.decorators import action
-from rest_framework.response import Response
 
+
+from shopy.store.models import Product
 from miq.staff.mixins import LoginRequiredMixin
 from miq.core.permissions import DjangoModelPermissions
 
-from shopy.store.models import Product
 from ..models import Cart, Order, Customer, OrderItem
-
 from ..serializers import CartSerializer, OrderSerializer, CustomerSerializer
 
 
@@ -39,8 +38,6 @@ def add_item_to_cart(order, product_slug, size_slug, quantity=1):
 
     if OrderItem.objects.filter(order=order, product__meta_slug=product_slug, size__slug=size_slug).exists():
         return
-
-    print('========>>>>>>>>')
 
     if not product_slug:
         raise serializers.ValidationError({'product': 'Slug required'})
