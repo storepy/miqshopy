@@ -4,6 +4,7 @@ from rest_framework import serializers
 from shopy.store.models import Product, ProductSize
 from shopy.store.serializers import ProductSerializer, ProductSizeSerializer
 
+from ...store.utils import price_to_dict
 from ..models import Customer, Order, Cart, OrderItem
 
 
@@ -48,7 +49,9 @@ CART
 class CartSerializer(serializers.ModelSerializer):
     class Meta():
         model = Cart
-        read_only_fields = ('slug', 'customer_data', 'created', 'updated', 'items', 'products')
+        read_only_fields = (
+            'slug', 'customer_data', 'items', 'products',
+            'subtotal', 'total', 'created', 'updated',)
         fields = ('customer', 'notes', 'dt_delivery', *read_only_fields)
 
     customer = serializers.SlugRelatedField(
@@ -60,6 +63,15 @@ class CartSerializer(serializers.ModelSerializer):
         many=True, required=False
     )
 
+    subtotal = serializers.SerializerMethodField(read_only=True)
+    total = serializers.SerializerMethodField(read_only=True)
+
+    def get_subtotal(self, obj):
+        return price_to_dict(obj.get_subtotal())
+
+    def get_total(self, obj):
+        return price_to_dict(obj.total)
+
 
 """
 ORDER
@@ -70,10 +82,10 @@ class OrderSerializer(serializers.ModelSerializer):
     class Meta:
         model = Order
         read_only_fields = (
-            'slug', 'customer_data', 'total',
+            'slug', 'customer', 'customer_data', 'total',
             'is_delivered', 'dt_delivered', 'items', 'items_count', 'added_by',
             'created', 'updated')
         fields = (
-            'customer', 'products', 'notes', 'dt_delivery',
+            'products', 'notes', 'dt_delivery',
             *read_only_fields
         )

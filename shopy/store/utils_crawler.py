@@ -1,4 +1,5 @@
 
+import pprint
 import re
 import json
 import requests
@@ -77,6 +78,56 @@ def clean_product_name(name: str) -> str:
     return name.strip()
 
 
+#
+# PLT
+#
+
+def plt_url_to_data(url: str) -> dict:
+    def get_text(url):
+        page = get(url)
+        soup = BeautifulSoup(page.text, "html.parser")
+
+        script = soup.find("script", type="application/ld+json")
+
+        text = script.string.replace('\n', ' ')
+        return soup, text
+
+    soup, eng = get_text(url)
+    href = soup.find("link", hreflang="fr-fr")['href']
+
+    _soup, fr = get_text(href)
+
+    data = load_raw_data(json.loads(fr), 'PLT')
+    _data = load_raw_data(json.loads(eng), 'PLT')
+
+    cost = _data.get('cost')
+    if cost:
+        data['cost'] = cost
+        data['cost_currency'] = _data['cost_currency']
+
+    carousel = _soup.find('div', id="product-carousel")
+    imgs = carousel.select('img.gallery-image')
+    data_imgs = []
+    for i in imgs:
+        data_imgs.append(clean_img_url(i['data-lazy']))
+
+    data['imgs'] = data_imgs
+
+    attrs = []
+    for k in data.keys():
+        if k.startswith('attrs__') and (value := data.get(k, None)):
+            attrs.append({'name': k.replace('attrs__', ''), 'value': value})
+
+    data['attrs'] = attrs
+    data['url'] = url
+
+    return data
+
+#
+# SHEIN
+#
+
+
 def shein_url_to_data(url: str):
     goods_id = shein_goods_id_from_url(url)
     if not goods_id:
@@ -110,6 +161,7 @@ def shein_url_to_data(url: str):
         data['cover'] = clean_img_url(cover)
 
     data['url'] = url
+
     return data
 
 
@@ -152,8 +204,11 @@ def shein_goods_id_from_url(url: str):
     if (match := re.search(r'p-(\d+)', url)) and (groups := match.groups()):
         return groups[0]
     return
-#
 
+
+#
+# UTILS
+#
 
 def load_raw_data(raw: dict, map_key: str) -> dict:
     data = {}

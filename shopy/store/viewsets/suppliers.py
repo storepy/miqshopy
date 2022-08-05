@@ -1,8 +1,7 @@
 
-
+import math
 import json
 import logging
-import math
 
 from django import http
 from django.utils.text import slugify
@@ -87,7 +86,7 @@ def add_product_images(product, product_data: dict, user=None):
 
 def add_product_attributes(product, product_data: dict):
     attrs = product.attributes
-    for _attr in product_data.get('attrs'):  # type: dict
+    for _attr in product_data.get('attrs', []):  # type: dict
         name = _attr.get('name').lower()  # type: str
         value = _attr.get('value')  # type: str
         if attrs.filter(name=name).exists():
@@ -131,6 +130,42 @@ def add_shein_product_to_order(order, data, user=None, url=None):
             item.url = url
 
         item.item_sn = data.get('productCode', '')
+
+    item.data = data
+    item.cost = data.get('cost')
+    item.category = data.get('category')
+    item.save()
+
+
+def add_plt_product_to_order(order, data, user=None, url=None):
+    p_name = clean_product_name(data.get('name'))
+    goods_id = data.get('sku')
+
+    qs = Product.objects
+
+    if qs.filter(supplier_item_id=goods_id).exists():
+        product = qs.get(supplier_item_id=goods_id)
+    else:
+        slug = slugify(p_name)
+
+        if qs.filter(meta_slug=slug).exists():
+            slug += f'-{get_random_string(length=32)}'
+
+        product = qs.create(
+            supplier=order.supplier, name=p_name,
+            description=data.get('description', ''),
+            meta_title=p_name, meta_slug=slug,
+            supplier_item_id=goods_id,
+            retail_price=estimate_retail_price(data.get('cost', 0)),
+        )
+        add_product_attributes(product, data)
+        add_product_images(product, data, user=user)
+        product.save()
+
+    item, new = SupplierItem.objects.get_or_create(order=order, product=product)
+    if new:
+        item.url = url
+        item.item_sn = data.get('sku')
 
     item.data = data
     item.cost = data.get('cost')
@@ -236,36 +271,7 @@ class SupplierOrderViewset(ViewSetMixin, viewsets.ModelViewSet):
                 {'data': _('can not perform this action')}
             )
 
-        qs = Product.objects
-        p_name = clean_product_name(p_data.get('name'))
-        goods_id = p_data.get('sku')
-        order = self.get_object()
-
-        if qs.filter(supplier_item_id=goods_id).exists():
-            product = qs.get(supplier_item_id=goods_id)
-        else:
-            product = qs.create(
-                supplier=order.supplier,
-                name=p_name, description=p_data.get('description'),
-                meta_title=p_name, meta_slug=slugify(p_name),
-                supplier_item_id=goods_id,
-                retail_price=estimate_retail_price(p_data.get('cost', 0)),
-            )
-            self.add_product_images(product, p_data)
-            product.save()
-
-        item, new = SupplierItem.objects.get_or_create(order=order, product=product)
-        if new:
-            item.url = url
-            item.item_sn = p_data.get('sku')
-
-        item.cost = p_data.get('cost')
-        item.category = p_data.get('category')
-        item.save()
-
-        # if not order.items.filter(slug=product.slug).exists():
-        #     order.items.add(product)
-
+        add_plt_product_to_order(self.get_object(), p_data, url=url, user=request.user)
         return self.retrieve(request, *args, **kwargs)
 
     @action(methods=['post'], detail=True, url_path=r'shein')
@@ -280,39 +286,9 @@ class SupplierOrderViewset(ViewSetMixin, viewsets.ModelViewSet):
                 {'data': _('can not perform this action')}
             )
 
-        order = self.get_object()
-
-        add_shein_product_to_order(order, p_data, url=url, user=self.request.user)
-        return self.retrieve(request, *args, **kwargs)
-
-        p_name = clean_product_name(p_data.get('name'))
-        goods_id = p_data.get('id')
-
-        qs = Product.objects
-        if qs.filter(supplier_item_id=goods_id).exists():
-            product = qs.get(supplier_item_id=goods_id)
-        else:
-            product = qs.create(
-                supplier=order.supplier, name=p_name,
-                description=p_data.get('description', ''),
-                meta_title=p_name, meta_slug=slugify(p_name),
-                supplier_item_id=goods_id,
-                retail_price=estimate_retail_price(p_data.get('cost', 0))
-            )
-            self.add_product_attributes(product, p_data)
-            self.add_product_images(product, p_data)
-            product.save()
-
-        item, new = SupplierItem.objects.get_or_create(order=order, product=product)
-        if new:
-            item.url = url
-            item.item_sn = p_data.get('productCode', '')
-
-        item.data = p_data
-        item.cost = p_data.get('cost')
-        item.category = p_data.get('category')
-        item.save()
-
+        add_shein_product_to_order(
+            self.get_object(), p_data, url=url, user=self.request.user
+        )
         return self.retrieve(request, *args, **kwargs)
 
     def update(self, request, *args, **kwargs):
@@ -383,7 +359,7 @@ class SupplierOrderViewset(ViewSetMixin, viewsets.ModelViewSet):
         return serializer.save()
 
 
-def add_order_feed(request, *args, **kwargs):
+def add_order_feed(request, supplier, *args, **kwargs):
     if not request.method == 'POST':
         return http.JsonResponse({'ok': True})
 
@@ -393,6 +369,13 @@ def add_order_feed(request, *args, **kwargs):
     if not order.exists():
         return http.JsonResponse({'order_slug': 'Invalid order'}, status=404)
 
-    add_shein_product_to_order(order.first(), payload, url=payload.get('url'), user=User.objects.first())
+    if not supplier:
+        return http.JsonResponse({'supplier': 'Required'}, status=400)
+
+    if supplier.lower() == 'shein':
+        add_shein_product_to_order(order.first(), payload, url=payload.get('url'), user=User.objects.first())
+
+    if supplier.lower() == 'plt':
+        add_plt_product_to_order(order.first(), payload, url=payload.get('url'), user=User.objects.first())
 
     return http.JsonResponse({'ok': True})

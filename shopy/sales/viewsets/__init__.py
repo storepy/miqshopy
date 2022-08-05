@@ -63,9 +63,14 @@ class CartViewset(Mixin, viewsets.ModelViewSet):
     queryset = Cart.objects.all()
     serializer_class = CartSerializer
 
+    @action(methods=['post', ], detail=True, url_path=r'items')
+    def items(self, request, *args, **kwargs):
+        # order = self.get_object()
+        # slugs
+        return self.retrieve(*args, **kwargs)
+
     @action(methods=['post', 'patch', 'delete'], detail=True, url_path=r'item/(?P<product_slug>[\w-]+)')
     def item(self, request, *args, product_slug: str = None, **kwargs):
-
         order = self.get_object()
         item = None
         # product = Product.objects.published().filter(slug=product_slug)

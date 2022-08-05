@@ -32,7 +32,8 @@ order_slug = '7386ee16-9f9d-4e66-8092-7038fb744013'  # local
 # order_slug = ''
 
 
-p_ = []
+p_ = [
+]
 
 count = len(set(p_))
 
@@ -45,7 +46,7 @@ def post(url):
     global count
 
     s = requests.Session()
-    api = f'{domain}/shop/feed/{order_slug}/'
+    api = f'{domain}/shop/feed/{order_slug}/shein/'
 
     data = shein_url_to_data(url)
     if not data:

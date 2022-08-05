@@ -17,7 +17,7 @@ urlpatterns = [
 
 urlpatterns += [
     path(
-        f'{app_name}/feed/<slug:order_slug>/',
+        f'{app_name}/feed/<slug:order_slug>/<slug:supplier>/',
         csrf_exempt(add_order_feed), name='product_feed'),
     path(
         f'{app_name}/fb-products/',
