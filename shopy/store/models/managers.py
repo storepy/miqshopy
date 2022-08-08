@@ -80,6 +80,9 @@ class ProductQueryset(models.QuerySet):
             .exclude(category__meta_slug__isnull=True)\
             .filter(category__is_published=True, is_published=True)
 
+    def order_for_shop(self):
+        return self.order_by('-is_pinned', 'is_oos', 'stage', 'position', '-created', 'name')
+
 
 class ManagerMixin:
     def draft(self):

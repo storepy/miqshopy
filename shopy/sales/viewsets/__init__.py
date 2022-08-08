@@ -63,16 +63,19 @@ class CartViewset(Mixin, viewsets.ModelViewSet):
     queryset = Cart.objects.all()
     serializer_class = CartSerializer
 
-    @action(methods=['post', ], detail=True, url_path=r'items')
-    def items(self, request, *args, **kwargs):
-        # order = self.get_object()
-        # slugs
-        return self.retrieve(*args, **kwargs)
-
-    @action(methods=['post', 'patch', 'delete'], detail=True, url_path=r'item/(?P<product_slug>[\w-]+)')
-    def item(self, request, *args, product_slug: str = None, **kwargs):
+    @action(methods=['post', 'patch', 'delete'], detail=True, url_path=r'item/(?P<item_slug>[\w-]+)')
+    def item(self, request, *args, item_slug: str = None, **kwargs):
         order = self.get_object()
-        item = None
+
+        item = order.items.filter(slug=item_slug)
+        if not item.exists():
+            raise serializers.ValidationError({'item': 'Not found'})
+
+        item = item.first()
+        if request.method == 'DELETE':
+            item.delete()
+            return self.retrieve(request, *args, **kwargs)
+
         # product = Product.objects.published().filter(slug=product_slug)
         # if not product.exists():
         #     raise serializers.ValidationError({'product': 'Not found'})
@@ -84,18 +87,9 @@ class CartViewset(Mixin, viewsets.ModelViewSet):
 
         # size = size.first()
 
-        if request.method == 'POST':
-            add_item_to_cart(order, product_slug, request.data.get('size'))
-            return self.retrieve(request, *args, **kwargs)
-
-        item = order.items.filter(product__slug=product_slug)
-        if not item.exists():
-            raise serializers.ValidationError({'item': 'Not found'})
-
-        item = item.first()
-        if request.method == 'DELETE':
-            item.delete()
-            return self.retrieve(request, *args, **kwargs)
+        # if request.method == 'POST':
+        #     add_item_to_cart(order, product_slug, request.data.get('size'))
+        #     return self.retrieve(request, *args, **kwargs)
 
         # item.size = size
         # item.quantity = request.data.get('qty', 1)

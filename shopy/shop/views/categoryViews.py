@@ -17,6 +17,7 @@ class CategoryView(ViewMixin, ListView):
         ctx = super().get_context_data(**kwargs)
 
         # SEO
+        ctx['object'] = self.category
         ctx['title'] = self.category.meta_title
         ctx['meta_description'] = self.category.meta_description
 
@@ -37,9 +38,11 @@ class CategoryView(ViewMixin, ListView):
         return ctx
 
     def get_queryset(self):
-        sp = self.kwargs.get('category_meta_slug')
+        return self.category.products.published().order_for_shop()
+
+    def dispatch(self, request, *args, **kwargs):
         self.category = get_object_or_404(
             Category.objects.published().has_products(),
-            meta_slug=sp)
-        return self.category.products.published()\
-            .order_by('is_oos', 'stage', 'position', '-created', 'name')
+            meta_slug=self.kwargs.get('category_meta_slug')
+        )
+        return super().dispatch(request, *args, **kwargs)

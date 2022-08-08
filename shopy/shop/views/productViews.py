@@ -86,8 +86,7 @@ class ProductsView(ViewMixin, ListView):
     page_label = None
 
     # TODO: Stage
-    queryset = Product.objects.published()\
-        .order_by('-is_pinned', 'is_oos', 'stage', 'position', '-created', 'name')
+    queryset = Product.objects.published().order_for_shop()
 
     def get_context_data(self, **kwargs) -> dict:
         context = super().get_context_data(**kwargs)
