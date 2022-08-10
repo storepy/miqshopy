@@ -32,4 +32,5 @@ urlpatterns += [
         views.ProductView.as_view(), name='product'),
 
     path(f'{app_name}/', views.ProductsView.as_view(), name='products'),
+    path('p/<slug:name>/', views.ShopLIBView.as_view(), name='lib'),
 ]
