@@ -40,11 +40,17 @@ class ProductView(ViewMixin, DetailView):
         return super().dispatch(request, *args, **kwargs)
 
     def get_object(self, *args, **kwargs):
-        return get_object_or_404(
+        p = get_object_or_404(
             Product.objects.published(),
             category__meta_slug=self.kwargs.get('category_meta_slug'),
             meta_slug=self.kwargs.get('meta_slug')
         )
+        recent = self.request.session.get('_recent') or []
+        if p.meta_slug not in recent:
+            recent = [p.meta_slug, *recent[:3]]
+
+        self.request.session['_recent'] = recent
+        return p
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
