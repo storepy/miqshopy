@@ -22,7 +22,7 @@ class ShopLIBView(LIBView):
             return ctx
 
         data = {
-            'lib_data': Serializer(obj).data,
+            'lib_data': LIBSerializer(obj).data,
             'categories': [category_to_dict(cat) for cat in get_published_categories()],
         }
         if recent := self.request.session.get('_recent'):

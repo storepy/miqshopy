@@ -10,6 +10,9 @@ from miq.staff.views import IndexView
 from miq.core.models import Currencies
 from miq.core.views.generic import ListView
 
+from miq.analytics.models import Hit
+from miq.analytics.serializers import HitSerializer
+
 
 from ..serializers import ShopSettingSerializer, SupplierItemSerializer
 from ..models import Product, Category, SupplierOrder, ShopSetting, SupplierChoices, ProductStages
@@ -33,8 +36,16 @@ class ShopStaffIndexView(IndexView):
         }
 
         setting = ShopSetting.objects.filter(site=get_current_site(self.request))
+
         if setting.exists():
             data['shopy_settings'] = ShopSettingSerializer(setting.first()).data
+
+        hits = Hit.public.filter(path__icontains='/shop')\
+            .exclude(path='/shop/')\
+            .key_by_created_date('session')
+
+        # data['hits'] = HitSerializer(hits[:100], many=True).data
+        data['hits'] = [*hits[:100]]
 
         self.update_sharedData(context, data)
 
