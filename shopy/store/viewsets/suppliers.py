@@ -192,12 +192,20 @@ class SupplierOrderViewset(ViewSetMixin, viewsets.ModelViewSet):
             raise serializers.ValidationError({'slugs': 'invalid'})
 
         order = self.get_object()
-        category = request.data.get('category')
+        params = request.query_params
         qs = order.products.filter(slug__in=slugs)
 
-        if qs.exists():
-            cat = Category.objects.filter(slug=category).first()
-            qs.all().update(category=cat)
+        if not qs.exists():
+            raise serializers.ValidationError({'slugs': 'invalid'})
+
+        if presale := params.get('presale'):
+            if presale == '0':
+                qs.all().update(is_pre_sale=False)
+            elif presale == '1':
+                qs.all().update(is_pre_sale=True)
+
+        if (category := request.data.get('category')) and (cat := Category.objects.filter(slug=category).exists()):
+            qs.all().update(category=cat.first())
 
         return self.retrieve(request, *args, **kwargs)
 
