@@ -207,7 +207,6 @@ class SupplierOrderViewset(ViewSetMixin, viewsets.ModelViewSet):
 
         category = request.data.get('category')
         if (cat := Category.objects.filter(slug=category)) and cat.exists():
-            print(cat.first())
             qs.all().update(category=cat.first())
 
         return self.retrieve(request, *args, **kwargs)
