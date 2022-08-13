@@ -205,7 +205,9 @@ class SupplierOrderViewset(ViewSetMixin, viewsets.ModelViewSet):
                 qs.all().update(is_pre_sale=True)
             return self.retrieve(request, *args, **kwargs)
 
-        if (category := request.data.get('category')) and (cat := Category.objects.filter(slug=category).exists()):
+        category = request.data.get('category')
+        if (cat := Category.objects.filter(slug=category)) and cat.exists():
+            print(cat.first())
             qs.all().update(category=cat.first())
 
         return self.retrieve(request, *args, **kwargs)
