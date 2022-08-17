@@ -63,6 +63,51 @@ class CartViewset(Mixin, viewsets.ModelViewSet):
     queryset = Cart.objects.all()
     serializer_class = CartSerializer
 
+    @action(methods=['post'], detail=True, url_path=r'products')
+    def post_items(self, request, *args, ** kwargs):
+        """ Add products to cart """
+
+        r_data = request.data
+        if not(isinstance(r_data, list)):
+            raise serializers.ValidationError({'data': 'invalid1'})
+
+        cart = self.get_object()
+        for data in r_data:
+            product_slug = data.pop('product_slug', None)
+            if not product_slug:
+                raise serializers.ValidationError({'data': 'invalid2'})
+
+            self.add_item(cart, product_slug, data)
+
+        return self.retrieve(request, *args, **kwargs)
+
+    @action(methods=['post'], detail=True, url_path=r'product/(?P<product_slug>[\w-]+)')
+    def post_item(self, request, *args, product_slug: str = None, ** kwargs):
+        """ Add product to cart """
+
+        self.add_item(self.get_object(), product_slug, request.data)
+
+        # size_slug = request.data.pop('size', None)
+
+        # qs = cart.items.filter(product__meta_slug=product_slug, size__slug=size_slug)
+        # if not qs.exists():
+        #     add_item_to_cart(
+        #         cart, product_slug, size_slug,
+        #         quantity=request.data.pop('quantity', 1),
+        #     )
+
+        return self.retrieve(request, *args, **kwargs)
+
+    def add_item(self, cart, product_slug, request_data):
+        size_slug = request_data.pop('size', None)
+
+        qs = cart.items.filter(product__meta_slug=product_slug, size__slug=size_slug)
+        if not qs.exists():
+            add_item_to_cart(
+                cart, product_slug, size_slug,
+                quantity=request_data.pop('quantity', 1),
+            )
+
     @action(methods=['post', 'patch', 'delete'], detail=True, url_path=r'item/(?P<item_slug>[\w-]+)')
     def item(self, request, *args, item_slug: str = None, **kwargs):
         order = self.get_object()

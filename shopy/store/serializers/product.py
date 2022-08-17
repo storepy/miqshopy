@@ -21,7 +21,7 @@ class ProductListSerializer(serializers.ModelSerializer):
         )
         fields = (
             *read_only_fields,
-            'name', 'description', 'category', 'cover',
+            'meta_slug', 'name', 'description', 'category', 'cover',
             'retail_price', 'is_on_sale', 'sale_price',
             'is_pre_sale', 'is_pre_sale_text', 'is_oos',
             'position', 'is_pinned', 'is_explicit'
