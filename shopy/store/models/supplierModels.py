@@ -62,8 +62,8 @@ SUPPLIER_MAP = {
 
 
 class SupplierOrder(BaseModelMixin):
-    name = models.CharField(_("Name"), max_length=99, default='New supplier order')
-    order_id = models.CharField(_("Order ID"), max_length=99, blank=True, null=True)
+    name = models.CharField(_("Name"), max_length=200, default='New supplier order')
+    order_id = models.CharField(_("Order ID"), max_length=200, blank=True, null=True)
 
     currency = models.CharField(
         verbose_name=_('Currency'),
@@ -120,9 +120,9 @@ class SupplierItem(BaseModelMixin):
         f'{app_name}.Product', verbose_name=_("Product"),
         on_delete=models.CASCADE, related_name='supplier_items')
 
-    item_sn = models.CharField(_("Item serial number"), max_length=99, null=True, blank=True)
-    category = models.CharField(_("Supplier category"), max_length=99, null=True, blank=True)
-    url = models.URLField(_("Supplier url"), max_length=500, null=True, blank=True)
+    item_sn = models.CharField(_("Item serial number"), max_length=200, null=True, blank=True)
+    category = models.CharField(_("Supplier category"), max_length=200, null=True, blank=True)
+    url = models.URLField(_("Supplier url"), max_length=900, null=True, blank=True)
     cost = models.DecimalField(
         max_digits=10, decimal_places=2, null=True, blank=True,
         help_text='FOB Price, excluding inbound shipping, taxes '

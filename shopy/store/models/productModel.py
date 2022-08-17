@@ -81,7 +81,7 @@ class Product(BaseModelMixin):
     DETAILS
     """
 
-    name = models.CharField(_("Name"), max_length=99)
+    name = models.CharField(_("Name"), max_length=200, help_text="Recommend 99")
     description = models.TextField(_("Description"), null=True, blank=True)
 
     """
@@ -115,7 +115,7 @@ class Product(BaseModelMixin):
         verbose_name=_('Supplier'),
         max_length=50, choices=SupplierChoice.choices,
         blank=True, null=True)
-    supplier_item_id = models.CharField(_("Item identifier"), max_length=99, null=True, blank=True, unique=True)
+    supplier_item_id = models.CharField(_("Item identifier"), max_length=200, null=True, blank=True, unique=True)
     stage = models.CharField(
         verbose_name=_('Stage'),
         max_length=30, choices=ProductStage.choices,
@@ -141,7 +141,7 @@ class Product(BaseModelMixin):
         null=True, blank=True
     )
     meta_slug = models.SlugField(
-        max_length=100, unique=True, db_index=True,
+        max_length=500, unique=True, db_index=True,
         null=True, blank=True
     )
 

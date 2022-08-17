@@ -20,7 +20,7 @@ class Category(BaseModelMixin):
         blank=True, null=True
     )
 
-    name = models.CharField(max_length=100, db_index=True)
+    name = models.CharField(max_length=200, db_index=True)
     description = models.TextField(_("Description"), null=True, blank=True)
 
     #
@@ -40,7 +40,7 @@ class Category(BaseModelMixin):
         null=True, blank=True
     )
     meta_slug = models.SlugField(
-        max_length=100, unique=True, db_index=True,
+        max_length=200, unique=True, db_index=True,
         null=True, blank=True
     )
 

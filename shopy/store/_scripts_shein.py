@@ -34,7 +34,6 @@ order_slug = '7386ee16-9f9d-4e66-8092-7038fb744013'  # local
 
 p_ = [
 ]
-
 count = len(set(p_))
 
 headers = {
@@ -67,6 +66,7 @@ def post(url):
             count -= 1
 
 
+p_.reverse()
 for link in set(p_):
     if not link:
         continue

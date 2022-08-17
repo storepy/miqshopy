@@ -70,6 +70,10 @@ class ProductQueryset(models.QuerySet):
     def draft(self):
         return self.exclude(slug__in=self.published().values_list('slug', flat=True))
 
+    def to_cart(self):
+        # TODO: Exclude invalid sizes
+        return self.published()
+
     def published(self):
         """
         Products that have a retail price, a category, are published
