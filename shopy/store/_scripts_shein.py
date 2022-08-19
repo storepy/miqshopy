@@ -29,11 +29,10 @@ domain = 'http://192.168.1.231:8000'
 # domain = 'http://feminity.africa'
 
 order_slug = '7386ee16-9f9d-4e66-8092-7038fb744013'  # local
-# order_slug = ''
+order_slug = ''
 
 
-p_ = [
-]
+p_ = []
 count = len(set(p_))
 
 headers = {

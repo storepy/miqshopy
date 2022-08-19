@@ -40,7 +40,7 @@ class ShopStaffIndexView(IndexView):
         if setting.exists():
             data['shopy_settings'] = ShopSettingSerializer(setting.first()).data
 
-        hits = Hit.public.filter(path__icontains='/shop')\
+        hits = Hit.views.filter(path__icontains='/shop')\
             .exclude(path='/shop/')\
             .key_by_created_date('session')
 
