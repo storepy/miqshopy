@@ -3,8 +3,9 @@ from django.apps import apps
 
 from django.db import models
 from django.db.models import Count
-
 from django.db.models.functions import Concat
+
+from miq.analytics.models.managers import HitManager
 
 
 class ProductQueryset(models.QuerySet):
@@ -154,3 +155,12 @@ class SupplierOrderManager(ManagerMixin, models.Manager):
     def get_queryset(self):
         return SupplierOrderQuerySet(self.model, using=self._db)\
             .prefetch_related('items')
+
+
+class ShopHitManager(HitManager):
+    def get_queryset(self):
+        return super().get_queryset()\
+            .exclude(is_bot=True)\
+            .filter(path__icontains='/shop')\
+            .exclude(path__icontains='/feed')\
+            .exclude(path__icontains='fb-products')
