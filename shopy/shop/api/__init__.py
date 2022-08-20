@@ -2,14 +2,15 @@
 from django.utils.translation import gettext_lazy as _
 
 from rest_framework import serializers
-from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
+from rest_framework.decorators import api_view, permission_classes
 
 # from shopy.store.models import Product
-from shopy.sales.viewsets import add_item_to_cart
-from shopy.sales.models import Customer, Cart
-# from shopy.sales.models import OrderItem
-from shopy.sales.serializers import CustomerSerializer, CartSerializer, OrderItemSerializer
+# from ...sales.models import OrderItem
+
+from ...sales.models import Customer, Cart
+from ...sales.viewsets import add_item_to_cart
+from ...sales.serializers import CustomerSerializer, CartSerializer, OrderItemSerializer
 
 
 @api_view(['POST'])

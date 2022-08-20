@@ -28,16 +28,21 @@ domain = 'http://127.0.0.1:8000'
 domain = 'http://192.168.1.231:8000'
 # domain = 'http://feminity.africa'
 
-order_slug = '7386ee16-9f9d-4e66-8092-7038fb744013'  # local
-order_slug = ''
+order_slug = '0eeefd77-2ebd-4c43-9425-559219a2fc28'  # local
+# order_slug = ''
 
 
 p_ = []
+
+
 count = len(set(p_))
 
 headers = {
-    'user-agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.111 Safari/537.36'
+    'user-agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.111 Safari/537.36',
+    'referrer': 'https://us.shein.com/'
 }
+
+errors = []
 
 
 def post(url):
@@ -56,6 +61,9 @@ def post(url):
     except requests.exceptions.ConnectionError as e:
         print('Connection refused', url)
         print(e)
+
+        errors.append(url)
+
     else:
         if r.status_code == 200:
             print(f': ADDED : {url}')
@@ -63,6 +71,7 @@ def post(url):
             print(f'Something went wrong\n{url}')
             print(r.status_code, r)
             count -= 1
+            errors.append(url)
 
 
 p_.reverse()
@@ -75,3 +84,7 @@ for link in set(p_):
         time.sleep(random.randint(1, 5))
 
 print('Crawled', count, 'links')
+
+if errors:
+    print('Errors with')
+    print(errors)

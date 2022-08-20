@@ -13,6 +13,7 @@ staff_router.register(r'products', viewsets.ProductViewset)
 staff_router.register(r'categories', viewsets.CategoryViewset)
 staff_router.register(r'supplierorders', viewsets.SupplierOrderViewset)
 staff_router.register(r'shopy-settings', viewsets.ShopSettingViewset)
+staff_router.register(r'shopy-analytics', viewsets.ShopAnalyticsViewset)
 
 
 urlpatterns = [
