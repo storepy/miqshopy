@@ -4,6 +4,7 @@ import time
 import requests
 
 from utils_crawler import plt_url_to_data
+from _scripts_constants import domain, baseheaders
 
 
 """
@@ -25,26 +26,24 @@ const getPLTOrderProductLinks = () => {
 };
 """
 
-domain = 'http://127.0.0.1:8000'
-domain = 'http://192.168.1.231:8000'
-# domain = 'http://feminity.africa'
 
 order_slug = '387008fd-421b-4da1-8698-40819b34372c'  # local
 # order_slug = ''
 
 
 p_ = []
+
 count = len(set(p_))
 
+s = requests.Session()
 headers = {
-    'user-agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.111 Safari/537.36',
+    **baseheaders
 }
 
 
 def post(url):
     global count
 
-    s = requests.Session()
     api = f'{domain}/shop/feed/{order_slug}/plt/'
 
     data = plt_url_to_data(url)

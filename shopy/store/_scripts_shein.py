@@ -4,6 +4,7 @@ import time
 import requests
 
 from utils_crawler import shein_url_to_data
+from _scripts_constants import domain, baseheaders
 
 
 """
@@ -24,9 +25,6 @@ const getSheinOrderProductLinks = () => {
 };
 """
 
-domain = 'http://127.0.0.1:8000'
-domain = 'http://192.168.1.231:8000'
-# domain = 'http://feminity.africa'
 
 order_slug = '0eeefd77-2ebd-4c43-9425-559219a2fc28'  # local
 # order_slug = ''
@@ -38,17 +36,17 @@ p_ = []
 count = len(set(p_))
 
 headers = {
-    'user-agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.111 Safari/537.36',
+    **baseheaders,
     'referrer': 'https://us.shein.com/'
 }
 
+s = requests.Session()
 errors = []
 
 
 def post(url):
     global count
 
-    s = requests.Session()
     api = f'{domain}/shop/feed/{order_slug}/shein/'
 
     data = shein_url_to_data(url)

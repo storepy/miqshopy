@@ -53,6 +53,10 @@ class ShopAnalyticsViewset(RetrieveMixin, viewsets.GenericViewSet):
     parser_classes = (JSONParser,)
     permission_classes = (IsAdminUser, )
 
+    @action(methods=['GET'], detail=True, url_path=r'notifications')
+    def notifications(self, request, *args, **kwargs):
+        return Response({})
+
     @action(methods=['GET'], detail=True, url_path=r'summary')
     def summary(self, request, *args, **kwargs):
         qs = ShopHit.objects.all()
