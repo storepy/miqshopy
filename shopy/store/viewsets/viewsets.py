@@ -61,16 +61,26 @@ class ShopAnalyticsViewset(RetrieveMixin, viewsets.GenericViewSet):
     def summary(self, request, *args, **kwargs):
         qs = ShopHit.objects.all()
         params = request.query_params
+        comp = None
 
         if range := params.get('__range'):
+            _qs = qs
             if range == 'today':
                 qs = qs.today()
+                comp = _qs.yesterday()
             if range == 'week':
                 qs = qs.last_7_days()
+                comp = _qs.last_14_days().exclude(pk__in=qs)
             if range == 'month':
                 qs = qs.last_30_days()
+                comp = _qs.last_60_days().exclude(pk__in=qs)
 
-        return Response(get_hit_data(qs=qs))
+        data = get_hit_data(qs=qs)
+        # data['count'] = ShopHit.objects.all().last_7_days().count_by_created_date()
+        if comp:
+            data['compare'] = get_hit_data(qs=comp)
+
+        return Response(data)
 
     def get_object(self):
         return get_object_or_404(ShopSetting, site=get_current_site(self.request))
