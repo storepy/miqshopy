@@ -1,20 +1,48 @@
 import datetime as dt
 from django.apps import apps
-
+from django.utils import timezone
 from django.db import models
 from django.db.models import Count
 from django.db.models.functions import Concat
+from django.contrib.postgres.search import SearchQuery, SearchVector
 
 from miq.analytics.models.managers import HitManager
 
 
 class ProductQueryset(models.QuerySet):
+    def to_cart(self):
+        return self.published().exclude(is_oos=True).has_sizes()
+
+    def has_no_category(self):
+        return self.filter(category__isnull=True)
+
+    def has_meta_slug_gt_100(self):
+        # Facebook recommends that meta slugs be less than 100 characters
+        return self.filter(meta_slug__gt=100)
+
+    def has_name_gt_65(self):
+        # Facebook recommends that product names be less than 65 characters
+        return self.filter(name__gt=65)
+
+    def has_no_description(self):
+        return self.filter(
+            models.Q(description='') | models.Q(description=None) | models.Q(description__isnull=True)
+        ).distinct()
+
+    def has_no_sizes(self):
+        return self\
+            .annotate(sizes_count=Count('sizes', filter=models.Q(sizes__quantity__gt=0)))\
+            .filter(sizes_count=0)
 
     def has_sizes(self):
-        from shopy.store.models import ProductSize
+        return self\
+            .annotate(sizes_count=Count('sizes', filter=models.Q(sizes__quantity__gt=0)))\
+            .exclude(sizes_count=0)
 
-        sizes = ProductSize.objects.exclude(quantity__lt=1)
-        return self.filter(id__in=sizes.values_list('product_id', flat=True))
+        # from shopy.store.models import ProductSize
+
+        # sizes = ProductSize.objects.exclude(quantity__lt=1)
+        # return self.filter(id__in=sizes.values_list('product_id', flat=True))
 
     def hits(self):
         if not apps.is_installed('miq.analytics'):
@@ -27,22 +55,32 @@ class ProductQueryset(models.QuerySet):
     def by_category_count(self):
         return self.values('category__name').order_by('category__name').annotate(count=Count('category__name'))
 
-    # for search
-
-    def by_name(self, value):
-        if not isinstance(value, str):
+    def search_by_query(self, query: str):
+        """
+        # https://docs.djangoproject.com/en/4.1/ref/contrib/postgres/search/#searchvector
+        """
+        if not isinstance(query, str) or not query:
             return self.none()
 
-        keys = (
-            'name', 'description', 'category__name',
-            'category__description', 'attributes__value',
-            'supplier_items__item_sn'
-        )
+        return self\
+            .annotate(search=SearchVector('name', 'description', 'category__name', 'category__description', 'attributes__value', 'supplier_items__item_sn'))\
+            .filter(search=SearchQuery(query))\
+            .distinct('position', 'created', 'name')
 
-        return self.annotate(
-            values=Concat(*keys, output_field=models.CharField())
-        ).filter(values__icontains=value.lower())\
-            .order_by('name').distinct('name')
+    # def by_name(self, value):
+    #     if not isinstance(value, str):
+    #         return self.none()
+
+    #     keys = (
+    #         'name', 'description', 'category__name',
+    #         'category__description', 'attributes__value',
+    #         'supplier_items__item_sn'
+    #     )
+
+    #     return self.annotate(
+    #         values=Concat(*keys, output_field=models.CharField())
+    #     ).filter(values__icontains=value.lower())\
+    #         .order_by('name').distinct('name')
 
     def by_price(self, amount: int):
         return self.filter(
@@ -54,11 +92,11 @@ class ProductQueryset(models.QuerySet):
         if not isinstance(days, int):
             days = 30
 
-        days = dt.date.today() - dt.timedelta(days=days)
-        return self.filter(created__date__gte=days)
+        return self\
+            .filter(created__date__gte=timezone.now() - dt.timedelta(days=days))
 
     def is_on_sale(self):
-        return self.filter(is_on_sale=True, sale_price__gte=0)
+        return self.filter(is_on_sale=True, sale_price__gt=0)
 
     def slice(self, *, count: int = None) -> list:
         """
@@ -70,10 +108,6 @@ class ProductQueryset(models.QuerySet):
 
     def draft(self):
         return self.exclude(slug__in=self.published().values_list('slug', flat=True))
-
-    def to_cart(self):
-        # TODO: Exclude invalid sizes
-        return self.published()
 
     def published(self):
         """

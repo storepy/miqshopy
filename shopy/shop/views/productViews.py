@@ -130,7 +130,7 @@ class ProductsView(ViewMixin, ListView):
             self.page_label = 'Soldes'
 
         if (q := self.request.GET.get('q')) and q != '':
-            qs = qs.by_name(q)
+            qs = qs.search_by_query(q)
 
         if (price := self.request.GET.get('price')) and price in price_ranges:
             qs = qs.by_price(price)

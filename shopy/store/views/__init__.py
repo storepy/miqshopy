@@ -21,6 +21,33 @@ from ..models import Product, Category, SupplierOrder, ShopSetting, SupplierChoi
 
 
 class ShopStaffIndexView(IndexView):
+    def get_store_issues(self, data):
+        assert isinstance(data, dict)
+
+        _qs = Product.objects.published()
+        has_issues = False
+        issues = {}
+
+        if (qs := _qs.has_no_description()) and qs.exists():
+            has_issues = True
+            issues['no_des'] = qs.count()
+
+        if (qs := _qs.has_name_gt_65()) and qs.exists():
+            has_issues = True
+            issues['name_gt_65'] = qs.count()
+
+        if (qs := _qs.has_meta_slug_gt_100()) and qs.exists():
+            has_issues = True
+            issues['meta_slug_gt_100'] = qs.count()
+
+        if (qs := _qs.has_no_sizes()) and qs.exists():
+            has_issues = True
+            issues['no_size'] = qs.count()
+
+        if has_issues:
+            data['issues'] = issues
+            data['has_issues'] = has_issues
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
@@ -40,6 +67,8 @@ class ShopStaffIndexView(IndexView):
 
         if setting.exists():
             data['shopy_settings'] = ShopSettingSerializer(setting.first()).data
+
+        self.get_store_issues(data)
 
         self.update_sharedData(context, data)
 
