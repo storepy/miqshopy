@@ -30,25 +30,30 @@ class CustomerManager(models.Manager):
 # ORDER
 #
 
-class OrderQueryset(models.QuerySet):
-    def unpaid(self):
-        return self.filter(is_paid=False)
-
-    def sales(self):
-        return self.filter(is_paid=True)
-
 
 class OrderManager(models.Manager):
     def sales(self):
-        return self.get_queryset().sales()
+        return self.get_queryset().filter(is_delivered=True)
+
+    def pending(self):
+        return self.get_queryset().filter(is_delivered=False)
 
     def get_queryset(self, *args, **kwargs):
-        return OrderQueryset(self.model, *args, using=self._db, **kwargs)\
-            .exclude(is_completed=False)\
+        return super().get_queryset()\
+            .filter(is_paid=True)\
             .select_related('customer',)\
-            .prefetch_related('products')
+            .prefetch_related('products', 'items')
 
 
 class CartManager(models.Manager):
+    def placed(self):
+        return self.get_queryset().filter(is_placed=True)
+
+    def abandonned(self):
+        return self.get_queryset().filter(is_placed=False)
+
     def get_queryset(self):
-        return super().get_queryset().filter(is_paid=False, is_completed=False)
+        return super().get_queryset()\
+            .filter(is_paid=False, is_delivered=False)\
+            .select_related('customer',)\
+            .prefetch_related('products', 'items')

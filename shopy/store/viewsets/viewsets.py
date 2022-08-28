@@ -63,15 +63,15 @@ class ShopAnalyticsViewset(RetrieveMixin, viewsets.GenericViewSet):
         params = request.query_params
         comp = None
 
-        if range := params.get('__range'):
+        if range := params.get('__window'):
             _qs = qs
             if range == 'today':
                 qs = qs.today()
                 comp = _qs.yesterday()
-            if range == 'week':
+            if range == 'last_7':
                 qs = qs.last_7_days()
                 comp = _qs.last_14_days().exclude(pk__in=qs)
-            if range == 'month':
+            if range == 'last_30':
                 qs = qs.last_30_days()
                 comp = _qs.last_60_days().exclude(pk__in=qs)
 

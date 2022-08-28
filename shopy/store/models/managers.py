@@ -1,9 +1,9 @@
 import datetime as dt
 from django.apps import apps
-from django.utils import timezone
 from django.db import models
+from django.utils import timezone
 from django.db.models import Count
-from django.db.models.functions import Concat
+# from django.db.models.functions import Concat
 from django.contrib.postgres.search import SearchQuery, SearchVector
 
 from miq.analytics.models.managers import HitManager
@@ -62,10 +62,14 @@ class ProductQueryset(models.QuerySet):
         if not isinstance(query, str) or not query:
             return self.none()
 
-        return self\
-            .annotate(search=SearchVector('name', 'description', 'category__name', 'category__description', 'attributes__value', 'supplier_items__item_sn'))\
-            .filter(search=SearchQuery(query))\
-            .distinct('position', 'created', 'name')
+        search_vector = SearchVector(
+            'name', 'description', 'category__name', 'category__description',
+            'attributes__value', 'supplier_items__item_sn')
+        search_qs = self.annotate(search=search_vector).filter(search=SearchQuery(query))\
+            .values('id').annotate(count=Count('id')).values_list('id', flat=True)
+        return self.filter(id__in=search_qs)
+
+        # return qs.distinct('position', 'created', 'name')
 
     # def by_name(self, value):
     #     if not isinstance(value, str):
@@ -192,9 +196,19 @@ class SupplierOrderManager(ManagerMixin, models.Manager):
 
 
 class ShopHitManager(HitManager):
+    def products(self):
+        return self.get_queryset().exclude(
+            models.Q(model='category')
+            | models.Q(path='/shop/')
+            | models.Q(path__startswith='/api/v1/')
+        )
+
+    def categories(self):
+        return self.get_queryset().exclude(models.Q(model='product'))
+
     def get_queryset(self):
         return super().get_queryset()\
             .exclude(is_bot=True)\
-            .filter(path__icontains='/shop')\
             .exclude(path__icontains='/feed')\
-            .exclude(path__icontains='fb-products')
+            .exclude(path__icontains='fb-products')\
+            .filter(models.Q(path__startswith='/shop'))

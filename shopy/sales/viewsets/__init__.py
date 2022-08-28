@@ -63,6 +63,11 @@ class CartViewset(Mixin, viewsets.ModelViewSet):
     queryset = Cart.objects.all()
     serializer_class = CartSerializer
 
+    @action(methods=['post'], detail=True, url_path=r'place')
+    def place(self, request, *args, ** kwargs):
+        self.get_object().place()
+        return self.retrieve(request, *args, ** kwargs)
+
     @action(methods=['post'], detail=True, url_path=r'products')
     def post_items(self, request, *args, ** kwargs):
         """ Add products to cart """

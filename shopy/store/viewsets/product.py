@@ -30,9 +30,6 @@ def get_product_qs(request, *, qs=None):
 
     params = request.query_params
 
-    if(atc := params.get('atc')) and atc == '1':
-        qs = qs.to_cart()
-
     if(order_slug := params.get('supplier_order_slug')):
         if order_slug == '':
             return qs.none()
@@ -68,6 +65,10 @@ def get_product_qs(request, *, qs=None):
             qs = qs.filter(is_explicit=True)
         if published == 'exclude':
             qs = qs.draft()
+
+    if(atc := params.get('atc')) and atc == '1':
+        qs = qs.to_cart()
+
     return qs.order_by('position', '-created', 'name')
 
 
