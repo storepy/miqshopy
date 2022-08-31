@@ -82,7 +82,7 @@ class StoreInsightsViewset(LoginRequiredMixin, viewsets.GenericViewSet):
                 x_count=models.Count('parsed_data__from_ref',)
                 # This would group by external source: so ig would count for 1 for ex
                 # x_count=models.Count('parsed_data__from_ref', distinct=True)
-        ).order_by('-msg_count')
+        ).order_by('-msg_count', '-x_count', '-ip_count', '-id_count')
         return self._paginate(qs)
 
     @action(methods=['GET'], detail=True,)
