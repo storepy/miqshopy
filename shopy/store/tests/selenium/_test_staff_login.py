@@ -3,11 +3,11 @@ from django.test import LiveServerTestCase
 
 from selenium import webdriver
 
-from miq.tests.mixins import TestMixin
+from miq.core.tests.utils import TestMixin
 from miq.tests.selenium.pages import HomePage
 
 dirname = os.path.dirname(__file__)
-driver_path = os.path.join(dirname, '../../../../chromedriver')
+driver_path = os.path.join(dirname, '../../../../../../chromedriver')
 
 
 class Mixin(TestMixin):
@@ -21,8 +21,15 @@ class TestHomePage(Mixin, LiveServerTestCase):
 
     def test_homepage(self):
         with webdriver.Chrome(driver_path) as driver:  # type: webdriver.Chrome
-            HomePage(driver).get(self.domain)
-            print(driver.page_source)
+            page = HomePage(driver).get(self.domain)
+            driver.get('http://192.168.1.231:8000/')
+            # driver.get(self.domain)
+            driver.save_screenshot('screenshot.png')
+
+            print('==>', self.domain)
+
+            # print(driver.page_source)
+            # webdriver.wait(driver, 10)
             assert 'This site is currently under construction.' in driver.page_source
 
 

@@ -1,3 +1,4 @@
+import logging
 
 from decimal import Decimal
 from urllib.parse import urlencode
@@ -19,6 +20,7 @@ from .supplierModels import SupplierChoice
 from .managers import ProductManager
 
 app_name = 'store'
+logger = logging.getLogger(__name__)
 
 
 class ProductStage(models.TextChoices):
@@ -226,6 +228,11 @@ class Product(BaseModelMixin):
         if self.is_published and not self.dt_published:
             self.dt_published = timezone.now()
 
+        if not self.pk and (not self.position or self._meta.model.objects.filter(position=self.position).exists()):
+            position = self._meta.model.objects.count() + 1
+            logger.info(f'[{self.name}]: Position[{self.position}] taken. Updatin to [{position}]')
+            self.position = position
+
         super().save(*args, **kwargs)
 
     class Meta:
@@ -260,3 +267,18 @@ class Product(BaseModelMixin):
         return self.category and self.category.is_published\
             and self.category.meta_slug\
             and self.meta_slug and self.is_published
+
+    def publish(self):
+        assert self.category, 'Product must have a category'
+        assert self.meta_slug, 'Product must have a meta slug'
+        assert self.meta_title, 'Product must have a meta title'
+        assert self.category.is_published, 'Product category must be published'
+
+        if self.is_published:
+            logger.info(f'[{self.name}]: Already published')
+            return
+
+        self.is_published = True
+        self.dt_published = timezone.now()
+        self.save()
+        logger.info(f'[{self.name}]: Published')

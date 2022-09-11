@@ -1,7 +1,7 @@
 from rest_framework import status
 from rest_framework.test import APITestCase
 
-from shopy.models import ProductPage
+from shopy.store.models import ProductPage
 from shopy.tests.utils import ShopMixin
 
 

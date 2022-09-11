@@ -1,3 +1,5 @@
+import logging
+
 from django.db import models
 from django.urls import reverse_lazy
 from django.utils import timezone
@@ -7,6 +9,8 @@ from django.utils.translation import gettext_lazy as _
 from miq.core.models import BaseModelMixin
 
 from .managers import CategoryManager
+
+logger = logging.getLogger(__name__)
 
 
 class Category(BaseModelMixin):
@@ -60,11 +64,27 @@ class Category(BaseModelMixin):
     def save(self, *args, **kwargs):
         if self.is_published and not self.dt_published:
             self.dt_published = timezone.now()
+            logger.info(f'[{self.name}]: Added dt published')
+
+        if not self.pk and (not self.position or self._meta.model.objects.filter(position=self.position).exists()):
+            position = self._meta.model.objects.count() + 1
+            logger.info(f'[{self.name}]: Position[{self.position}] taken. Updatin to [{position}]')
+            self.position = position
 
         super().save(*args, **kwargs)
 
-    def __str__(self):
-        return capfirst(self.name)
+    def publish(self):
+        assert self.meta_slug, 'Category must have a meta slug'
+        assert self.meta_title, 'Category must have a meta title'
+
+        if self.is_published:
+            logger.info(f'[{self.name}]: Already published')
+            return
+
+        self.is_published = True
+        self.dt_published = timezone.now()
+        self.save()
+        logger.info(f'[{self.name}]: Published')
 
     def get_is_public(self):
         return self.meta_slug and self.is_published
@@ -73,7 +93,12 @@ class Category(BaseModelMixin):
     def detail_path(self):
         return reverse_lazy('shopy:category', args=[self.meta_slug])
 
+    def __str__(self):
+        return capfirst(self.name)
+        
     class Meta:
         ordering = ('position', '-created', 'name')
         verbose_name = 'Category'
         verbose_name_plural = 'Categories'
+
+    

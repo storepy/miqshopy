@@ -1,8 +1,10 @@
 import logging
 
+
 from django.db import IntegrityError
 from django.utils.text import slugify
 from django.utils.translation import gettext_lazy as _
+from django.contrib.sites.shortcuts import get_current_site
 
 from rest_framework.decorators import action
 from rest_framework.parsers import JSONParser
@@ -11,6 +13,7 @@ from rest_framework.permissions import IsAdminUser
 
 # from rest_framework import status, mixins
 
+from miq.core.middleware import local
 from miq.core.permissions import DjangoModelPermissions
 
 from ..models import Product, ProductAttribute, ProductStages
@@ -18,7 +21,6 @@ from ..serializers import ProductSerializer, ProductListSerializer
 from ..serializers import ProductAttributeSerializer, ProductSizeSerializer
 
 from .mixins import ViewSetMixin
-
 
 log = logging.getLogger(__name__)
 
@@ -126,25 +128,20 @@ class ProductViewset(ViewSetMixin, viewsets.ModelViewSet):
             return self.retrieve(self, request, *args, **kwargs)
 
         log.info(f'Publishing product[{obj_id}]')
-
-        if not obj.retail_price:
-            log.error(f'Cannot publish product[{obj_id}]: retail price required')
-            raise serializers.ValidationError(
-                {'retail_price': _('Retail price required')})
+        required = ['retail_price', 'meta_slug', 'meta_title', 'category']
+        for field in required:
+            if getattr(obj, field,None):
+                continue
+            log.error(f'Cannot publish product[{obj_id}]: {field} required')
+            raise serializers.ValidationError({field: _('Required')}, code='required')
 
         category = obj.category
-        if not category:
-            log.error(f'Cannot publish product[{obj_id}]: No category')
-            raise serializers.ValidationError({'category': _('Category required')})
         if not category.is_published:
             log.error(
                 f'Cannot publish product[{obj_id}]: category[{category.id}] is unpublished')
-            raise serializers.ValidationError(
-                {'category': _('This category is unpublished')})
+            raise serializers.ValidationError({'category': _('This category is unpublished')})
 
-        obj.is_published = True
-        obj.save()
-        log.info(f'Published product [{obj_id}]')
+        obj.publish()
 
         return self.retrieve(self, request, *args, **kwargs)
 
@@ -248,3 +245,9 @@ class ProductViewset(ViewSetMixin, viewsets.ModelViewSet):
     def perform_create(self, ser):
         name = self.request.data.get('name')
         ser.save(meta_title=name, meta_slug=slugify(name))
+
+    def dispatch(self, request, *args, **kwargs):
+        if not local.site:
+            local.site = get_current_site(request)
+
+        return super().dispatch(request, *args, **kwargs)

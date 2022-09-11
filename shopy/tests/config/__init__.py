@@ -24,21 +24,32 @@ INSTALLED_APPS = [
     #
     'rest_framework',
 
+    'miq.analytics',
     'miq.core',
-    'miq.auth',
+    'miq.staff',
+
+    'shopy.shop',
+    'shopy.store',
+    'shopy.sales',
+
 ]
 
-ROOT_URLCONF = 'miq.auth.tests.config.urls'
+ROOT_URLCONF = 'shopy.tests.config.urls'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
+        'ENGINE': 'django.db.backends.postgresql_psycopg2',
+        # 'NAME':'test_mydb',
+        # 'USER': 'myuser',
+        # 'PASSWORD': 'mypassword',
+        # 'HOST': '',
+        # 'PORT': '',
     },
 }
 
 MIDDLEWARE = [
     # CORS
-    # 'miq.middleware.CORSMiddleware',
+    # 'miq.core.middleware.CORSMiddleware',
     #
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -47,6 +58,10 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+
+    'miq.core.middleware.SiteMiddleware',
+    'miq.analytics.middlewares.AnalyticsMiddleware',
+    'shopy.shop.middleware.ShopMiddleware',
 ]
 
 

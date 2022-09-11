@@ -1,6 +1,6 @@
 from django.urls import reverse_lazy
 
-from miq.tests.mixins import TestMixin
+from miq.core.tests.utils import TestMixin
 
 from shopy.store.models import Product, ProductPage
 
@@ -17,22 +17,29 @@ class ShopMixin(TestMixin):
     def get_cart_path(self, *, slug=None):
         if slug:
             return reverse_lazy('shop:cart_update', args=[slug])
-        return reverse_lazy('shop:cart', args=[])
+        return reverse_lazy('store:cart', args=[])
+
 
     def get_product_category_path(self, slug):
-        return reverse_lazy('shop:product-category', args=[slug])
+        return reverse_lazy('store:product-category', args=[slug])
 
     def get_product_page_path(self, slug):
-        return reverse_lazy('shop:product-page', args=[slug])
+        return reverse_lazy('store:product-page', args=[slug])
 
     def get_product_detail_path(self, slug):
-        return reverse_lazy('shop:product-detail', args=[slug])
+        return reverse_lazy('store:product-detail', args=[slug])
+
+    def get_product_publish_path(self, slug):
+        return reverse_lazy('store:product-publish', args=[slug])
 
     def get_product_list_path(self):
-        return reverse_lazy('shop:product-list')
+        return reverse_lazy('store:product-list')
 
     def get_category_detail_path(self, slug):
-        return reverse_lazy('shop:category-detail', args=[slug])
+        return reverse_lazy('store:category-detail', args=[slug])
+    
+    def get_category_publish_path(self, slug):
+        return reverse_lazy('store:category-publish', args=[slug])
 
     def get_category_list_path(self):
-        return reverse_lazy('shop:category-list')
+        return reverse_lazy('store:category-list')

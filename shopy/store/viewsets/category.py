@@ -31,17 +31,23 @@ class CategoryViewset(ViewSetMixin, viewsets.ModelViewSet):
         obj = self.get_object()
         obj_id = obj.id
         pub = request.data.get('is_published', False)
+        if not pub:
+            obj.is_published = False
+            obj.save()
+
+            log.info(f'unpublished category[{obj_id}]')
+            return self.retrieve(self, request, *args, **kwargs)
 
         log.info(f'Publishing category[{obj_id}]: {pub}')
-        if pub:
-            required = ['name', 'meta_title', 'meta_slug', ]
-            for field in required:
-                if not getattr(obj, field, None):
-                    log.error(f'Cannot publish category[{obj_id}]: {field} required')
-                    raise serializers.ValidationError({field: _('required')})
 
-        obj.is_published = pub
-        obj.save()
+        required = ['name', 'meta_title', 'meta_slug', ]
+        for field in required:
+            if getattr(obj, field, None):
+                continue
+            log.error(f'Cannot publish category[{obj_id}]: {field} required')
+            raise serializers.ValidationError({field: _('required')})
+
+        obj.publish()
 
         return self.retrieve(self, request, *args, **kwargs)
 

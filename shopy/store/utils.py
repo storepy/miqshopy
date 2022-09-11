@@ -1,32 +1,21 @@
+
 import re
+import logging
 
-from django.conf import settings
+from ..utils import get_currency
 
-#
-
-
-#
+logger = logging.getLogger(__name__)
 
 # https://www.facebook.com/business/help/120325381656392?id=725943027795860
 
 
 def price_to_dict(price_field, currency=None):
     if not price_field and price_field != 0:
+        logger.debug(f'Invalid price_field: {price_field}')
         return
 
-    if not currency:
-        from .models import ShopSetting
-
-        setting = ShopSetting.objects.filter(site_id=settings.SITE_ID).first()
-        if not setting:
-            raise Exception('Currency needed')
-        currency = setting.currency
-
-    # locale.setlocale(locale.LC_MONETARY, curr_to_locale(currency))
-    # locale.setlocale(locale.LC_ALL, 'fr_CH')
-    # amt = locale.currency(price_field, grouping=True)
-
-    amt = f'{price_field} {currency}'
+    currency = get_currency()
+    amt: str = f'{price_field} {currency}'
     if currency in ['XOF', 'XAF']:
         amt = f'{intcomma(int(price_field))} CFA'
 
@@ -34,8 +23,19 @@ def price_to_dict(price_field, currency=None):
         'currency': currency,
         'amount': price_field,
         'amountWithSymbol': amt
-
     }
+
+    # if not currency:
+    #     from .models import ShopSetting
+
+    #     setting = ShopSetting.objects.filter(site_id=settings.SITE_ID).first()
+    #     if not setting:
+    #         raise Exception('Currency needed')
+    #     currency = setting.currency
+
+    # locale.setlocale(locale.LC_MONETARY, curr_to_locale(currency))
+    # locale.setlocale(locale.LC_ALL, 'fr_CH')
+    # amt = locale.currency(price_field, grouping=True)
 
 
 def intcomma(value):
