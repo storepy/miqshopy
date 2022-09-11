@@ -3,14 +3,15 @@ from django.dispatch import receiver
 from django.db.models import signals
 from django.contrib.sites.models import Site
 
-from miq.core.middleware import local
+from .viewsets.product import local
 
 from .models import Product, Category, ShopSetting, ProductPage, CategoryPage, ProductImage
 
 
 def create_page(instance, PageModel):
+    site = getattr(local, 'site', Site.objects.get_current())
     return PageModel.objects.create(
-        site=local.site, title=instance.meta_title,
+        site=site, title=instance.meta_title,
         meta_slug=instance.meta_slug or uuid.uuid4()
     )
 

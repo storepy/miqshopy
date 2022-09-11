@@ -1,6 +1,8 @@
 
 /shopy/store/_scripts_constants.*
 
+shopyenv/
+
 # Unit test / coverage reports
 htmlcov/
 .tox/

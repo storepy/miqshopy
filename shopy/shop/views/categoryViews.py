@@ -2,9 +2,10 @@ from django.shortcuts import get_object_or_404
 
 from miq.core.views.generic import ListView
 from miq.core.serializers import serialize_context_pagination
-from shopy.store.models import Product, Category
 
-from ..serializers import ProductListSerializer
+from ...store.models import Product, Category
+from ...sales.api import APIProductListSerializer
+
 from .mixins import ViewMixin
 
 
@@ -23,16 +24,14 @@ class CategoryView(ViewMixin, ListView):
 
         # sD
         data = {
-            'object_list': ProductListSerializer(ctx.get('object_list'), many=True).data,
-            'pagination': serialize_context_pagination(self.request, ctx)
-        }
-        data.update({
             'page_label': self.category.name,
             'breadcrumbs': [
                 {'label': 'Accueil', 'path': '/'},
                 {'label': 'Catalogue', 'path': '/shop/'},
             ],
-        })
+            'object_list': APIProductListSerializer(ctx.get('object_list'), many=True).data,
+            'pagination': serialize_context_pagination(self.request, ctx)
+        }
         self.update_sharedData(ctx, data)
 
         return ctx

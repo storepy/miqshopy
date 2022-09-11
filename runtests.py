@@ -8,13 +8,13 @@ from django.test.utils import get_runner
 
 
 if __name__ == "__main__":
-    os.environ['DJANGO_SETTINGS_MODULE'] = 'shopy.store.tests.config.settings'
+    os.environ['DJANGO_SETTINGS_MODULE'] = 'tests.config.settings'
     django.setup()
     TestRunner = get_runner(settings)
     test_runner = TestRunner()
     failures = test_runner.run_tests([
         "shopy/shop/tests/",
         "shopy/store/tests/",
-        "shopy/orders/tests/",
+        "shopy/sales/tests/",
     ])
     sys.exit(bool(failures))

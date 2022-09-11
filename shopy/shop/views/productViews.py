@@ -13,9 +13,9 @@ from miq.core.models import SiteSetting
 from miq.core.views.generic import ListView, DetailView
 from miq.core.serializers import serialize_context_pagination
 
-from shopy.store.models import Product
+from ...store.models import Product
+from ...sales.api import APIProductSerializer
 
-from ..serializers import ProductDetailSerializer, ProductListSerializer
 from ..serializers import category_to_dict, get_category_url
 from ..utils import product_to_jsonld, get_published_categories
 
@@ -65,7 +65,7 @@ class ProductView(ViewMixin, DetailView):
         context['jsonld'] = product_to_jsonld(obj, self.request)
 
         data = {
-            'product': ProductDetailSerializer(obj).data,
+            'product': APIProductSerializer(obj).data,
             'breadcrumbs': [
                 {'label': 'Accueil', 'path': '/'},
                 {'label': 'Catalogue', 'path': '/shop/'},
@@ -76,7 +76,7 @@ class ProductView(ViewMixin, DetailView):
         if (similar := obj.category.products.published().exclude(pk=obj.id).filter(is_oos=False))\
                 and similar.exists():
             data['similar'] = [
-                ProductListSerializer(item).data for item in similar.order_by('?')[:4]
+                APIProductSerializer(item).data for item in similar.order_by('?')[:4]
             ]
 
         self.update_sharedData(context, data)
@@ -106,7 +106,7 @@ class ProductsView(ViewMixin, ListView):
             breadcrumbs.append({'label': 'Catalogue', 'path': '/shop/'},)
 
         data = {
-            'object_list': ProductListSerializer(context.get('object_list'), many=True).data,
+            'object_list': APIProductSerializer(context.get('object_list'), many=True).data,
             'pagination': serialize_context_pagination(self.request, context)
         }
         if self.page_label:

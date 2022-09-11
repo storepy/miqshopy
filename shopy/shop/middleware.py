@@ -5,8 +5,8 @@ from django.contrib.sites.shortcuts import get_current_site
 
 from miq.core.utils import get_session
 
-from shopy.sales.models import Cart
-from shopy.sales.serializers import CartSerializer
+from ..sales.models import Cart
+from ..sales.api import APICartSerializer
 
 logger = logging.getLogger(__name__)
 loginfo = logger.info
@@ -48,7 +48,7 @@ class ShopMiddleware(CurrentSiteMiddleware):
                 loginfo(f'ProductView[{obj.id}]')
 
             sD.update({
-                'cart': CartSerializer(cart).data
+                'cart': APICartSerializer(cart).data
             })
 
             loginfo(f'Session cart[{cart.id}]')

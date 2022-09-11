@@ -1,6 +1,8 @@
 [run]
 source = .
 omit = */env/*
+    */miqenv/*
+    */shopyenv/*
     */tests/*
     */migrations/*
     */urls.py

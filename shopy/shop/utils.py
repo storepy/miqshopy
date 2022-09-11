@@ -5,7 +5,7 @@ from django.utils.text import Truncator
 from django.utils.safestring import mark_safe
 from django.contrib.sites.shortcuts import get_current_site
 
-import miq
+import miq.core
 import shopy
 
 from shopy.store.utils import intcomma

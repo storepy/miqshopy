@@ -1,18 +1,20 @@
 from django.urls import path
 from django.views.decorators.csrf import csrf_exempt
 
-from . import api
 from . import views
 from ..store.viewsets.suppliers import add_order_feed
+
+from ..sales.api import post_orderitem, patch_orderitem
+
 
 app_name = 'shop'
 
 
 urlpatterns = [
-    path('api/order/customer/', api.post_customer, name='api_customer'),
+    # path('api/order/customer/', api.post_customer, name='api_customer'),
     # path('api/order/cart/', api.patch_cart, name='api_cart'),
-    path('api/order/cart/<slug:product_slug>/', api.post_orderitem, name='api_cart_post_product'),
-    path('api/order/item/<slug:item_slug>/', api.patch_orderitem, name='api_cart_patch_item'),
+    path('api/order/cart/<slug:product_slug>/', post_orderitem, name='api_cart_post_product'),
+    path('api/order/item/<slug:item_slug>/', patch_orderitem, name='api_cart_patch_item'),
 ]
 
 urlpatterns += [
