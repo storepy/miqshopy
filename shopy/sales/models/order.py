@@ -1,6 +1,8 @@
 import logging
+from decimal import Decimal
 
 from django.db import models
+from django.utils import timezone
 from django.contrib.auth import get_user_model
 
 from django.utils.translation import gettext_lazy as _
@@ -74,17 +76,22 @@ class Order(BaseModelMixin):
 
     objects = OrderManager()
 
+    def mark_delivered(self):
+        assert self.is_paid, 'Cart is not paid'
+        assert self.is_delivered is False, 'Order is already delivered'
+
+        self.is_delivered = True
+        self.dt_delivered = timezone.now()
+
+        self.save()
+        logger.info(f'Order[{self.id}] delivered')
+
     def get_subtotal(self):
         return sum(item.get_subtotal() for item in self.items.all())
 
     @property
     def items_count(self):
         return sum(item.quantity for item in self.items.all())
-
-    class Meta:
-        ordering = ('-created',)
-        verbose_name = _('Orders')
-        verbose_name_plural = _('Orders')
 
     def delete(self, *args, **kwargs):
         if self.is_paid:
@@ -93,10 +100,15 @@ class Order(BaseModelMixin):
         self.items.all().delete()
         return super().delete(*args, **kwargs)
 
-    def __str__(self):
+    class Meta:
+        ordering = ('-created',)
+        verbose_name = _('Orders')
+        verbose_name_plural = _('Orders')
+
+    def __str__(self) -> str:
         return f'Order {self.id}: {self.items_count}'
 
-    def __len__(self):
+    def __len__(self) -> int:
         return self.items_count
 
 
@@ -129,6 +141,11 @@ class Cart(Order):
         assert self.customer, 'Cart has no customer'
         assert self.is_paid is False, 'Cart is already paid'
 
+        if self.is_placed:
+            logger.info(f'Cart[{self.id}]: Already placed')
+            return self
+
+        self.total = self.get_subtotal()
         self.is_placed = True
         self.save()
         logger.info(f'Cart[{self.id}] placed')

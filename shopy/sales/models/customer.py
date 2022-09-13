@@ -53,6 +53,9 @@ class Customer(BaseModelMixin):
 
     objects = CustomerManager()
 
+    def name(self) -> str:
+        return f'{self.first_name} {self.last_name}'
+
     def save(self, *args, **kwargs):
         if self.email == '':
             self.email = None

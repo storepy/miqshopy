@@ -3,14 +3,12 @@ from rest_framework import viewsets, serializers
 from rest_framework.parsers import JSONParser
 from rest_framework.permissions import IsAdminUser
 from rest_framework.decorators import action
-
-
-from shopy.store.models import Product
 from miq.staff.mixins import LoginRequiredMixin
 from miq.core.permissions import DjangoModelPermissions
 
-from ..models import Cart, Order, Customer, OrderItem
-from ..serializers import CartSerializer, OrderSerializer, CustomerSerializer
+from ..api import add_item_to_cart
+from ..models import Cart, Order, Customer
+from ..serializers import OrderSerializer, CustomerSerializer, get_cart_serializer_class
 
 
 class Mixin(LoginRequiredMixin):
@@ -29,43 +27,39 @@ class CustomerViewset(Mixin, viewsets.ModelViewSet):
 
         q = params.get('q')
         if q:
+            if (len(q) < 3):
+                return qs.none()
             qs = qs.find(q)
 
         return qs
 
-
-def add_item_to_cart(order, product_slug, size_slug, quantity=1):
-
-    if OrderItem.objects.filter(order=order, product__meta_slug=product_slug, size__slug=size_slug).exists():
-        return
-
-    if not product_slug:
-        raise serializers.ValidationError({'product': 'Slug required'})
-
-    product = Product.objects.published().filter(meta_slug=product_slug).exclude(is_oos=True)
-    if not product.exists():
-        raise serializers.ValidationError({'product': 'Not found'})
-
-    product = product.first()
-    size = product.sizes.filter(slug=size_slug, quantity__gt=0)
-    if not size.exists():
-        raise serializers.ValidationError({'size': 'Not found'})
-
-    size = size.first()
-    # check size availability
-
-    return OrderItem.objects.create(
-        order=order, product=product, size=size, quantity=quantity
-    )
+    def perform_create(self, serializer):
+        serializer.save(added_by=self.request.user)
 
 
 class CartViewset(Mixin, viewsets.ModelViewSet):
     queryset = Cart.objects.all()
-    serializer_class = CartSerializer
+    # serializer_class = CartSerializer
+    serializer_class = get_cart_serializer_class(
+        extra_fields=('customer', 'notes', 'dt_delivery'),
+        extra_read_only_fields=(
+            'slug', 'customer_name', 'customer_data', 'is_placed',
+            'items', 'products',
+            'subtotal', 'total', 'created', 'updated')
+    )
 
     @action(methods=['post'], detail=True, url_path=r'place')
     def place(self, request, *args, ** kwargs):
-        self.get_object().place()
+
+        obj = self.get_object()
+        if obj.is_placed:
+            raise serializers.ValidationError({'cart': 'Already placed'})
+
+        try:
+            obj.place()
+        except Exception as e:
+            raise serializers.ValidationError({'cart': str(e)})
+
         return self.retrieve(request, *args, ** kwargs)
 
     @action(methods=['post'], detail=True, url_path=r'products')
@@ -73,7 +67,7 @@ class CartViewset(Mixin, viewsets.ModelViewSet):
         """ Add products to cart """
 
         r_data = request.data
-        if not(isinstance(r_data, list)):
+        if not (isinstance(r_data, list)):
             raise serializers.ValidationError({'data': 'invalid1'})
 
         cart = self.get_object()
@@ -146,6 +140,17 @@ class CartViewset(Mixin, viewsets.ModelViewSet):
         # item.save()
 
         return self.retrieve(request, *args, **kwargs)
+
+    def get_serializer_class(self):
+        if self.action == 'list':
+            return get_cart_serializer_class(
+                request=self.request,
+                extra_read_only_fields=('is_placed', 'customer', 'subtotal', 'total', 'created', 'updated')
+            )
+        return super().get_serializer_class()
+
+    def perform_create(self, serializer):
+        serializer.save(added_by=self.request.user)
 
 
 class OrderViewset(CartViewset):
