@@ -247,7 +247,7 @@ class Product(BaseModelMixin):
         return self.supplier_items.filter(product__slug=self.slug).first()
 
     def path(self, request=None):
-        if(self.get_is_public()):
+        if (self.get_is_public()):
             path = reverse_lazy('shopy:product', args=[self.category.meta_slug, self.meta_slug])
             if request:
                 return request.build_absolute_uri(path)

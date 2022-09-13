@@ -6,9 +6,10 @@ from rest_framework.test import APITestCase
 
 from miq.core.tests.utils import get_temp_img
 
-from shopy.tests.utils import ShopMixin
+from .utils import ShopMixin
 
 TEST_MEDIA_DIR = 'test_media'
+
 
 class Mixin(ShopMixin):
 
@@ -17,6 +18,7 @@ class Mixin(ShopMixin):
             shutil.rmtree(TEST_MEDIA_DIR)
         except Exception:
             pass
+
 
 @override_settings(MEDIA_ROOT=(TEST_MEDIA_DIR))
 class TestStoreCategoryViewSet(Mixin, APITestCase):
@@ -35,7 +37,7 @@ class TestStoreCategoryViewSet(Mixin, APITestCase):
         # test post a category
         data = {'name': 'A category'}
 
-        self.assertEqual( 
+        self.assertEqual(
             self.client.post(path, data, format="json").status_code,
             status.HTTP_403_FORBIDDEN
         )
@@ -46,14 +48,14 @@ class TestStoreCategoryViewSet(Mixin, APITestCase):
 
         r = self.client.post(path, data, format="json")
         self.assertEqual(r.status_code, status.HTTP_201_CREATED)
-        
+
         res_data = r.data
         self.assertEqual(res_data['name'], data['name'])
         self.assertEqual(res_data['meta_title'], data['name'])
         self.assertEqual(res_data['meta_slug'], 'a-category')
         self.assertFalse(res_data['is_published'])
         self.assertEqual(res_data['position'], 1)
-        
+
         r2 = self.client.post(path, {'name': 'Another category'}, format="json")
         self.assertEqual(r2.data['position'], 2)
 
@@ -61,7 +63,7 @@ class TestStoreCategoryViewSet(Mixin, APITestCase):
         u_path = self.get_category_detail_path(slug)
         r = self.client.patch(u_path, {'name': 'Updated category'}, format="json")
         self.assertEqual(r.status_code, status.HTTP_403_FORBIDDEN)
-        
+
         self.add_user_perm(self.user, 'change_category')
         r = self.client.patch(u_path, {'name': 'Updated category'}, format="json")
         self.assertEqual(r.status_code, status.HTTP_200_OK)
@@ -69,7 +71,7 @@ class TestStoreCategoryViewSet(Mixin, APITestCase):
 
         # add cover image
         self.add_user_perm(self.user, 'add_image')
-        r = self.client.post(self.get_staff_img_list_path(),{'src': get_temp_img()},)
+        r = self.client.post(self.get_staff_img_list_path(), {'src': get_temp_img()},)
         self.assertEqual(r.status_code, status.HTTP_201_CREATED)
 
         img_slug = r.data['slug']
@@ -82,7 +84,7 @@ class TestStoreCategoryViewSet(Mixin, APITestCase):
         r = self.client.patch(pub_path, {'is_published': True}, format="json")
         self.assertEqual(r.status_code, status.HTTP_200_OK)
         self.assertTrue(r.data['is_published'])
-        
+
         r = self.client.patch(pub_path)
         self.assertEqual(r.status_code, status.HTTP_200_OK)
         self.assertFalse(r.data['is_published'])
@@ -90,18 +92,18 @@ class TestStoreCategoryViewSet(Mixin, APITestCase):
         # can't publish a category without a meta title and meta slug
         meta_slug = r.data['meta_slug']
 
-        r = self.client.patch(u_path, {'meta_slug': None, 'meta_title':None}, format="json")
+        r = self.client.patch(u_path, {'meta_slug': None, 'meta_title': None}, format="json")
         self.assertIsNone(r.data['meta_slug'])
         self.assertIsNone(r.data['meta_title'])
 
         r = self.client.patch(pub_path, {'is_published': True}, format="json")
         self.assertEqual(r.status_code, status.HTTP_400_BAD_REQUEST)
 
-        self.client.patch(u_path, {'meta_slug':meta_slug}, format="json")
+        self.client.patch(u_path, {'meta_slug': meta_slug}, format="json")
         r = self.client.patch(pub_path, {'is_published': True}, format="json")
         self.assertEqual(r.status_code, status.HTTP_400_BAD_REQUEST)
 
-        self.client.patch(u_path, {'meta_title':'A brand new title'}, format="json")
+        self.client.patch(u_path, {'meta_title': 'A brand new title'}, format="json")
         r = self.client.patch(pub_path, {'is_published': True}, format="json")
         self.assertEqual(r.status_code, status.HTTP_200_OK)
 
