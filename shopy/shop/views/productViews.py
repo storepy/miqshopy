@@ -1,5 +1,4 @@
 import csv
-from tkinter.messagebox import NO
 
 from django.http import HttpResponse
 
