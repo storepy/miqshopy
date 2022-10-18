@@ -1,10 +1,10 @@
 from django.urls import reverse_lazy
 
 
-from shopy.store.tests.utils import ShopMixin
+from shopy.store.tests.utils import StoreMixin
 
 
-class SalesMixin(ShopMixin):
+class SalesMixin(StoreMixin):
     def get_order_list_path(self):
         return reverse_lazy('sales:order-list')
 

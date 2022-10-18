@@ -15,7 +15,7 @@ from .managers import CartManager, OrderManager
 logger = logging.getLogger(__name__)
 User = get_user_model()
 
-# Abandonned cart->placed->cart->paid?->order->delivered?->sale
+# Abandonned cart->placed?->cart->paid?->order->delivered?->sale
 
 
 class Order(BaseModelMixin):

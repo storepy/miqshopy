@@ -8,14 +8,14 @@ from rest_framework.test import APITestCase
 
 from miq.core.tests.utils import get_temp_img
 
-from .utils import ShopMixin
+from .utils import StoreMixin
 
 from shopy.store.models import Product, Category
 
 TEST_MEDIA_DIR = 'test_media'
 
 
-class Mixin(ShopMixin):
+class Mixin(StoreMixin):
 
     def tearDown(self):
         try:

@@ -21,6 +21,8 @@ urlpatterns = [
     path(f'{settings.API_PATH}/', include(staff_router.urls)),
 
     # path('trackr/', views.TrackrListView.as_view(), name="track"),
+    path(f'staff/{app_name}/products/<slug:slug>/',
+         views.StaffProductView.as_view(), name='product'),
 
     # Catch-all
     re_path(r'staff/store/', views.ShopStaffIndexView.as_view(), name='index'),

@@ -27,7 +27,14 @@ class Command(BaseCommand):
             if not hits.exists():
                 continue
 
+            session_data = item.get_hit_data() or {}
+            session_data.pop('app', None)
+            session_data.pop('model', None)
+
             hits.update(app=item._meta.app_label, model=item._meta.model_name)
+
+            for hit in hits.filter(session_data__name__isnull=True):
+                print(hit.session_data)
 
         for item in Category.objects.exclude(meta_slug__isnull=True):
             hits = get_hits().filter(path__icontains=item.meta_slug)

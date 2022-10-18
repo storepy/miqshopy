@@ -27,10 +27,28 @@ const getSheinOrderProductLinks = () => {
 
 
 order_slug = '0eeefd77-2ebd-4c43-9425-559219a2fc28'  # local
-# order_slug = ''
+order_slug = '90e89872-7d6d-46a3-8122-3d1f62ffe9f6'
 
 
-p_ = []
+p_ = [
+    'https://www.shein.com/Structured-Cuff-Choker-p-11214980-cat-1755.html?mallCode=1',
+    'https://www.shein.com/Wave-Design-Cuff-Choker-p-11500541-cat-1755.html?mallCode=1',
+    'https://www.shein.com/Minimalist-Cuff-Choker-p-11275860-cat-1755.html?mallCode=1',
+    'https://www.shein.com/Minimalist-Cuff-Choker-p-11073905-cat-1755.html?mallCode=1',
+    'https://www.shein.com/Solid-Minimalist-Layered-Cuff-Choker-p-11375205-cat-1755.html?mallCode=1',
+    'https://www.shein.com/Solid-Minimalist-Layered-Choker-p-11375203-cat-1755.html?mallCode=1',
+    'https://www.shein.com/Minimalist-Layered-Cuff-Choker-p-11143322-cat-1755.html?mallCode=1',
+    'https://www.shein.com/Snake-Decor-Choker-p-11271928-cat-1755.html?mallCode=1',
+    'https://www.shein.com/Knot-Decor-Cuff-Choker-p-11093360-cat-1755.html?mallCode=1',
+    'https://www.shein.com/Minimalist-Cuff-Choker-p-11275772-cat-1755.html?mallCode=1',
+    'https://www.shein.com/Cylindrical-Charm-Choker-p-11324983-cat-1755.html?mallCode=1',
+    'https://www.shein.com/Minimalist-Layered-Cuff-Choker-p-11073934-cat-1755.html?mallCode=1',
+    # '',
+    'https://www.shein.com/3pcs-Layered-Minimalist-Ring-p-11323858-cat-1759.html?mallCode=1',
+    'https://www.shein.com/2pcs-Circle-Decor-Ring-p-11275963-cat-1759.html?mallCode=1',
+    'https://www.shein.com/4pcs-Minimalist-Metal-Ring-p-11205845-cat-1759.html?mallCode=1',
+    'https://www.shein.com/Hollow-Out-Cuff-Choker-p-11073992-cat-1755.html?mallCode=1',
+]
 
 
 count = len(set(p_))
@@ -72,7 +90,7 @@ def post(url):
             errors.append(url)
 
 
-p_.reverse()
+# p_.reverse()
 for link in set(p_):
     if not link:
         continue

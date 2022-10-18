@@ -1,4 +1,5 @@
 import csv
+from tkinter.messagebox import NO
 
 from django.http import HttpResponse
 
@@ -11,9 +12,11 @@ from rest_framework import serializers
 from miq.core.middleware import local
 from miq.core.models import SiteSetting
 from miq.core.views.generic import ListView, DetailView
+from miq.analytics.utils import get_hit_data
 from miq.core.serializers import serialize_context_pagination
 
-from ...store.models import Product
+from ...store.models import Product, ProductHit, CategoryHit
+from ...sales.models import Customer
 from ...sales.api import APIProductSerializer
 
 from ..serializers import category_to_dict, get_category_url
@@ -25,19 +28,51 @@ from .mixins import ViewMixin
 price_ranges = ['5000', '10000', '25000', '50000']
 
 
+def create_hit(request, response, item, itemtype):
+
+    _data = get_hit_data(request, response)
+    filter = {'url': _data['url'], 'user_agent': _data['user_agent'], 'ip': _data['ip'], }
+    model = ProductHit if itemtype == 'product' else CategoryHit
+    if itemtype == 'product':
+        filter.update({'product': item})
+    elif itemtype == 'category':
+        filter.update({'category': item})
+
+    cus_slug = request.session.get('_cus') or None
+    customer = None
+
+    if cus_slug:
+        customer = Customer.objects.filter(slug=cus_slug).first()
+
+    hits = model.objects.filter(**filter)
+    if not hits.exists():
+        return model.objects.create(**filter, customer=customer)
+
+    hit = hits.first()
+    hit.count += 1
+
+    if not hit.customer and customer:
+        hit.customer = customer
+    hit.save()
+    return hit
+
+
 class ProductView(ViewMixin, DetailView):
     model = Product
     template_name = 'shop/product.django.html'
 
     def dispatch(self, request, *args, **kwargs):
         r = request.GET.get('r')
-        if r == '1':
-            p = self.get_object()
-            s = SiteSetting.objects.get(site=get_current_site(request))
-            if (num := s.whatsapp_number):
-                link = p.get_whatsapp_link(num, request)
-                return redirect(link)
-        return super().dispatch(request, *args, **kwargs)
+        response = super().dispatch(request, *args, **kwargs)
+        if r == '1' and (num := SiteSetting.objects.get(site=get_current_site(request)).whatsapp_number):
+            response = redirect(self.object.get_whatsapp_link(num, request))
+
+        try:
+            create_hit(request, response, self.object, 'product')
+        except Exception:
+            pass
+
+        return response
 
     def get_object(self, *args, **kwargs):
         p = get_object_or_404(
@@ -60,12 +95,14 @@ class ProductView(ViewMixin, DetailView):
             return context
 
         category = obj.category
-        context['title'] = obj.meta_title + f' - {category.name}'
+        p_data = APIProductSerializer(obj).data
+
+        context['title'] = f"{p_data['price']['amountWithSymbol']} - {obj.meta_title} | {category.name}"
         context['meta_description'] = obj.meta_description
         context['jsonld'] = product_to_jsonld(obj, self.request)
 
         data = {
-            'product': APIProductSerializer(obj).data,
+            'product': p_data,
             'breadcrumbs': [
                 {'label': 'Accueil', 'path': '/'},
                 {'label': 'Catalogue', 'path': '/shop/'},
@@ -97,9 +134,8 @@ class ProductsView(ViewMixin, ListView):
     def get_context_data(self, **kwargs) -> dict:
         context = super().get_context_data(**kwargs)
 
-        # context['meta_description'] = f"Trouvez des robes stylées pour toute occasion sur {site.name}."\
-        #     " Vous adorerez notre collection de robes noires, petites ou longues ou pour les occasions à des prix imbattables. "\
-        #     "Tous les jours, every day fête, party bureau . travail, soirée, nightclub, sporty"
+        context[
+            'meta_description'] = f"Trouvez des bijoux chics, des robes, hauts et autre accessoires stylés pour toute occasion sur {self.request.site.name}."
 
         breadcrumbs = [{'label': 'Accueil', 'path': '/'}]
         if self.request.GET.get('sale', self.request.GET.get('q')):

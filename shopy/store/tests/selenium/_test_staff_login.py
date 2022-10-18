@@ -8,6 +8,7 @@ from miq.tests.selenium.pages import HomePage
 
 dirname = os.path.dirname(__file__)
 driver_path = os.path.join(dirname, '../../../../../../chromedriver')
+driver_path = '/Users/marqetintl/Dropbox/MIQ/projects/chromedriver'
 
 
 class Mixin(TestMixin):

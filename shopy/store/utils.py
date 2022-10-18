@@ -3,10 +3,25 @@ import re
 import logging
 
 from ..utils import get_currency
+from .models import Category
 
 logger = logging.getLogger(__name__)
 
 # https://www.facebook.com/business/help/120325381656392?id=725943027795860
+
+
+def get_category_options() -> dict:
+    cats = Category.objects.all()
+    return {
+        'count': cats.count(),
+        'items': [
+            {
+                'label': cat.name,
+                'slug': cat.slug,
+                'value': cat.slug
+            } for cat in cats
+        ]
+    }
 
 
 def price_to_dict(price_field, currency=None):

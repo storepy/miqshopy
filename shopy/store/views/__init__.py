@@ -10,14 +10,24 @@ from django.contrib.sites.shortcuts import get_current_site
 # from rest_framework.response import Response
 # from rest_framework.decorators import api_view
 
+from miq.staff.views.generic import DetailView
 from miq.staff.views import IndexView
 from miq.core.models import Currencies
 
 # from miq.analytics.models import Hit
 # from miq.analytics.serializers import HitSerializer
 
-from ..serializers import ShopSettingSerializer
+from ..utils import get_category_options
+from ..serializers import ShopSettingSerializer, ProductSerializer
 from ..models import Product, Category, SupplierOrder, ShopSetting, SupplierChoices, ProductStages
+
+
+def get_base_context_data(request):
+    data = {'currencies': Currencies, 'suppliers': SupplierChoices, 'stages': ProductStages}
+
+    if (setting := ShopSetting.objects.filter(site=get_current_site(request))) and setting.exists():
+        data['shopy_settings'] = ShopSettingSerializer(setting.first()).data
+    return data
 
 
 class ShopStaffIndexView(IndexView):
@@ -52,23 +62,38 @@ class ShopStaffIndexView(IndexView):
         context = super().get_context_data(**kwargs)
 
         data = {
+            **get_base_context_data(self.request),
             'orders': {'count': SupplierOrder.objects.count()},
             'products': {'count': Product.objects.count()},
             'cats': {
                 'count': Category.objects.count(),
                 'cat_count': list(Product.objects.all().by_category_count())
             },
-            'currencies': Currencies,
-            'suppliers': SupplierChoices,
-            'stages': ProductStages,
+
         }
 
-        setting = ShopSetting.objects.filter(site=get_current_site(self.request))
-
-        if setting.exists():
-            data['shopy_settings'] = ShopSettingSerializer(setting.first()).data
-
         self.get_store_issues(data)
+
+        self.update_sharedData(context, data)
+
+        return context
+
+
+class StaffProductView(DetailView):
+    model = Product
+    template_name = 'store/base.django.html'
+    context_object_name = 'product'
+    slug_field = 'slug'
+    # slug_url_kwarg = 'product_slug'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        data = {
+            **get_base_context_data(self.request),
+            'product': ProductSerializer(self.object).data,
+            'categories': get_category_options()
+        }
 
         self.update_sharedData(context, data)
 

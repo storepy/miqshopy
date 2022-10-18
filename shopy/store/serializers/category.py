@@ -2,29 +2,55 @@
 from rest_framework import serializers
 
 from miq.core.models import Image
-from miq.staff.serializers import ImageSerializer
 
 from ..models import Category
 
+from .serializers import ProductImageSerializer
 
-class CategorySerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Category
-        read_only_fields = (
-            'slug', 'dt_published', 'cover_data',
-            'products_count', 'published_count', 'draft_count',
-            'created', 'updated'
-        )
-        fields = (
-            'name', 'description', 'cover', 'position',
-            'meta_title', 'meta_slug', 'meta_description', 'is_published',
-            *read_only_fields
+__all__ = ('get_category_serializer_class', 'CategorySerializer')
+
+
+def get_category_serializer_class(*, extra_fields=(), extra_read_only_fields=(), img_serializer=None, ** kwargs):
+    read_only_fields = (*extra_read_only_fields,)
+    fields = (*read_only_fields, *extra_fields)
+    props = {
+        'Meta': type('Meta', (), {
+            'model': Category,
+            'fields': fields,
+            'read_only_fields': read_only_fields
+        })
+    }
+
+    ImgSerializer = img_serializer or ProductImageSerializer
+
+    if 'cover' in fields:
+        props['cover'] = serializers.SlugRelatedField(
+            slug_field="slug", queryset=Image.objects.all(), required=False
         )
 
-    cover = serializers.SlugRelatedField(
-        slug_field="slug", queryset=Image.objects.all(), required=False
+    if 'cover_data' in extra_read_only_fields:
+        props['cover_data'] = ImgSerializer(source='cover', read_only=True)
+
+    if 'products_count' in extra_read_only_fields:
+        props['products_count'] = serializers.IntegerField(read_only=True)
+
+    if 'published_count' in extra_read_only_fields:
+        props['published_count'] = serializers.IntegerField(read_only=True)
+
+    if 'draft_count' in extra_read_only_fields:
+        props['draft_count'] = serializers.IntegerField(read_only=True)
+
+    return type('CategorySerializer', (serializers.ModelSerializer,), props)
+
+
+CategorySerializer = get_category_serializer_class(
+    extra_read_only_fields=(
+        'slug', 'dt_published', 'cover_data', 'is_published',
+        'products_count', 'published_count', 'draft_count',
+        'created', 'updated'
+    ),
+    extra_fields=(
+        'name', 'description', 'cover', 'position',
+        'meta_title', 'meta_slug', 'meta_description',
     )
-    cover_data = ImageSerializer(source='cover', read_only=True)
-    products_count = serializers.IntegerField(read_only=True)
-    published_count = serializers.IntegerField(read_only=True)
-    draft_count = serializers.IntegerField(read_only=True)
+)

@@ -16,3 +16,4 @@ from .supplierModels import SupplierOrder, SupplierItem, SUPPLIER_MAP
 from .supplierModels import SupplierChoice, SupplierChoices
 
 from .analyticsModels import ShopHit
+from .analyticsModels import ProductHit, CategoryHit

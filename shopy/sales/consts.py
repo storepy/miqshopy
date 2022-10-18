@@ -1,0 +1,3 @@
+
+CART_SESSION_KEY = '_cart'
+CUSTOMER_SESSION_KEY = '_cus'

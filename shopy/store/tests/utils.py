@@ -6,7 +6,7 @@ from miq.core.tests.utils import TestMixin
 from shopy.store.models import Product, ProductSize, Category
 
 
-class ShopMixin(TestMixin):
+class StoreMixin(TestMixin):
 
     def add_size_to_product(self, product, name, **kwargs):
         code = kwargs.get('code') or slugify(name)

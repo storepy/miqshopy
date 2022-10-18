@@ -5,7 +5,7 @@ from ...store.serializers import get_product_serializer_class
 
 from ..serializers import get_cart_serializer_class
 
-APIProductImageSerializer = get_img_serializer_class(
+APIImageSerializer = get_img_serializer_class(
     extra_ro_fields=(
         'caption', 'alt_text',
         'height', 'height_mobile', 'height_thumb', 'height_thumb_sq',
@@ -14,7 +14,7 @@ APIProductImageSerializer = get_img_serializer_class(
 )
 
 APIProductListSerializer = get_product_serializer_class(
-    img_serializer=APIProductImageSerializer,
+    img_serializer=APIImageSerializer,
     extra_read_only_fields=(
         'url', 'meta_slug', 'name', 'name_truncated',
         'retail_price', 'retail_price_data', 'sale_price', 'sale_price_data',
@@ -23,7 +23,7 @@ APIProductListSerializer = get_product_serializer_class(
     )
 )
 APIProductSerializer = get_product_serializer_class(
-    img_serializer=APIProductImageSerializer,
+    img_serializer=APIImageSerializer,
     extra_read_only_fields=(
         'meta_slug', 'name', 'name_truncated', 'description',
         'price', 'retail_price', 'retail_price_data', 'sale_price', 'sale_price_data',
@@ -35,7 +35,7 @@ APIProductSerializer = get_product_serializer_class(
 
 APICartSerializer = get_cart_serializer_class(
     extra_read_only_fields=(
-        'slug', 'customer', 'customer_name', 'items', 'products', 'sizes',
+        'slug', 'customer', 'customer_name', 'items', 'products',
         'subtotal', 'total',
         # 'customer_data', 'is_placed',
     )

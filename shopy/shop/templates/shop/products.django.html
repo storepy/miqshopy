@@ -4,8 +4,8 @@
 
 {% block meta %}
 
-<meta property="og:description" content="{{meta_description}}" />
+<meta name="apple-mobile-web-app-title" content="{{site.name}}" />
+<meta property="og:description" content="{% firstof meta_description object.meta_description object.description %}" />
+<meta name="description" content="{% firstof meta_description object.meta_description object.description %}" />
 
-<meta name="description" content="" />
-
-{% endblock meta %}
+{% endblock meta %} 

@@ -33,7 +33,7 @@ def on_product_will_save(sender, instance, **kwargs):
         return
 
     name = instance.name
-    if((old := sender.objects.get(pk=instance.pk)) and old.name != name):
+    if((old := sender.objects.filter(pk=instance.pk).first()) and old.name != name):
         if instance.cover:
             instance.cover.alt_text = name
             instance.cover.save()

@@ -1,7 +1,7 @@
 
 from .serializers import (
     APIProductSerializer, APIProductListSerializer,
-    APICartSerializer, APIProductImageSerializer,
+    APICartSerializer, APIImageSerializer
 )
 
 from .views import (
@@ -12,7 +12,7 @@ from .views import (
 
 
 __all__ = [
-    'APIProductSerializer', 'APIProductListSerializer', 'APIProductImageSerializer',
+    'APIProductSerializer', 'APIProductListSerializer', 'APIImageSerializer',
     'APICartSerializer',
     #
     'add_item_to_cart', 'post_orderitem', 'patch_orderitem',
