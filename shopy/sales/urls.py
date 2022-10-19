@@ -5,7 +5,7 @@ from rest_framework import routers
 from rest_framework.urlpatterns import format_suffix_patterns
 
 
-from . import viewsets
+from . import viewsets, views
 
 
 app_name = 'sales'
@@ -27,6 +27,9 @@ generic_patterns = format_suffix_patterns(
 urlpatterns = [
     # path('api/', include(router.urls)),
     path(f'{settings.API_PATH}/', include(router.urls)),
+
+    path('staff/sales/carts/<slug:slug>/', views.StaffCartUpdateView.as_view(), name='staffcartupdate'),
+    path('staff/sales/carts/<slug:slug>/items/', views.StaffCartUpdateItemsView.as_view(), name='staffcartupdateitems'),
 
     # path('/', include(generic_patterns)),
 
