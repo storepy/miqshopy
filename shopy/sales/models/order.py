@@ -9,6 +9,7 @@ from django.utils.translation import gettext_lazy as _
 
 from miq.core.models import BaseModelMixin
 
+
 from .. import __app_name__
 from .managers import CartManager, OrderManager
 
@@ -126,7 +127,14 @@ class Cart(Order):
         assert self.is_delivered is False, 'Cart is already delivered'
 
         logger.info(f'Cart[{self.id}]: Updating {self.items_count} items.')
-        self.items.update(size__quantity=models.F('size__quantity') - models.F('quantity'))
+
+        # TODO: update stock
+        for item in self.items.all():
+            size = item.size
+            size.quantity -= item.quantity
+            size.save()
+
+        # self.items.update(size__quantity=models.F('size__quantity') - models.F('quantity'))
 
         self.is_paid = True
         self.save()

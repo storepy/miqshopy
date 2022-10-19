@@ -31,6 +31,8 @@ urlpatterns = [
     path('staff/sales/carts/<slug:slug>/', views.StaffCartUpdateView.as_view(), name='staffcartupdate'),
     path('staff/sales/carts/<slug:slug>/items/', views.StaffCartUpdateItemsView.as_view(), name='staffcartupdateitems'),
 
+    path('staff/sales/', views.StaffSalesIndexView.as_view(), name='staffindex'),
+
     # path('/', include(generic_patterns)),
 
     # path('orders/cart/', views.CartDetailView.as_view(), name='cart'),

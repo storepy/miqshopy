@@ -1,4 +1,6 @@
 
+from django.http import JsonResponse
+
 from rest_framework import viewsets, serializers
 from rest_framework.parsers import JSONParser
 from rest_framework.permissions import IsAdminUser
@@ -47,6 +49,20 @@ class CartViewset(Mixin, viewsets.ModelViewSet):
             'items', 'products',
             'subtotal', 'total', 'created', 'updated')
     )
+
+    @action(methods=['post'], detail=True, url_path=r'pay')
+    def mark_paid(self, request, *args, ** kwargs):
+
+        obj = self.get_object()
+        if not obj.is_placed:
+            raise serializers.ValidationError({'cart': 'Not placed'})
+
+        try:
+            obj.mark_paid()
+        except Exception as e:
+            raise serializers.ValidationError({'cart': str(e)})
+
+        return JsonResponse({'status': 'ok'})
 
     @action(methods=['post'], detail=True, url_path=r'place')
     def place(self, request, *args, ** kwargs):

@@ -30,6 +30,10 @@ class CustomerManager(models.Manager):
 # ORDER
 #
 
+class OrderQuerySet(models.QuerySet):
+    def total(self):
+        return self.aggregate(total=models.Sum('total'))['total']
+
 
 class OrderManager(models.Manager):
     def sales(self):
@@ -39,7 +43,8 @@ class OrderManager(models.Manager):
         return self.get_queryset().filter(is_delivered=False)
 
     def get_queryset(self, *args, **kwargs):
-        return super().get_queryset()\
+        # return super().get_queryset()\
+        return OrderQuerySet(self.model, *args, using=self._db, **kwargs)\
             .filter(is_paid=True)\
             .select_related('customer',)\
             .prefetch_related('products', 'items')
