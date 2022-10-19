@@ -10,16 +10,22 @@ from django.contrib.sites.shortcuts import get_current_site
 # from rest_framework.response import Response
 # from rest_framework.decorators import api_view
 
-from miq.staff.views.generic import DetailView
+
 from miq.staff.views import IndexView
 from miq.core.models import Currencies
 
 # from miq.analytics.models import Hit
 # from miq.analytics.serializers import HitSerializer
 
-from ..utils import get_category_options
-from ..serializers import ShopSettingSerializer, ProductSerializer
+from ..serializers import ShopSettingSerializer
 from ..models import Product, Category, SupplierOrder, ShopSetting, SupplierChoices, ProductStages
+
+from .v_product import StaffProductsView, StaffProductView
+
+__all__ = (
+    'ShopStaffIndexView',
+    'StaffProductsView', 'StaffProductView'
+)
 
 
 def get_base_context_data(request):
@@ -77,54 +83,3 @@ class ShopStaffIndexView(IndexView):
         self.update_sharedData(context, data)
 
         return context
-
-
-class StaffProductView(DetailView):
-    model = Product
-    template_name = 'store/base.django.html'
-    context_object_name = 'product'
-    slug_field = 'slug'
-    # slug_url_kwarg = 'product_slug'
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-
-        data = {
-            **get_base_context_data(self.request),
-            'product': ProductSerializer(self.object).data,
-            'categories': get_category_options()
-        }
-
-        self.update_sharedData(context, data)
-
-        return context
-
-
-"""
-
-hits = ShopHit.objects.all()
-# .filter(parsed_data__from_source__isnull=False)
-external_sources = hits.exclude(parsed_data__from_ref=None)\
-    .values('parsed_data__from_ref',)\
-    .annotate(count=Count('ip')).order_by('-count')
-
-campaigns = hits.exclude(parsed_data__utm_campaign=None)\
-    .values('parsed_data__utm_campaign',)\
-    .annotate(count=Count('ip')).order_by('-count')
-
-# 1 being Monday and day 7 being Sunday.
-by_week_day = hits\
-    .values('created__week_day')\
-    .annotate(count=Count('path')).order_by('-count')
-
-
-ua = hits\
-    .values('created__day')\
-    .annotate(count=Count('created__day')).order_by('-created')
-# .annotate(date=Cast('created__date', output_field=CharField()))\
-
-pprint(list(ua[:10]))
-
-
-print(hits.count(), ua.count())
-"""

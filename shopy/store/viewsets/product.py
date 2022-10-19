@@ -26,12 +26,12 @@ from .mixins import ViewSetMixin
 log = logging.getLogger(__name__)
 
 
-def get_product_qs(request, *, qs=None):
+def get_product_qs(request, *, qs=None, params=None):
     assert request is not None
     if qs is None:
         qs = Product.objects.all()
 
-    params = request.query_params
+    params = params or getattr(request, 'query_params', {}) or {}
 
     if(order_slug := params.get('supplier_order_slug')):
         if order_slug == '':

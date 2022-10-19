@@ -22,7 +22,9 @@ urlpatterns = [
 
     # path('trackr/', views.TrackrListView.as_view(), name="track"),
     path(f'staff/{app_name}/products/<slug:slug>/',
-         views.StaffProductView.as_view(), name='product'),
+         views.StaffProductView.as_view(), name='staffproduct'),
+    path(f'staff/{app_name}/products/',
+         views.StaffProductsView.as_view(), name='staffproducts'),
 
     # Catch-all
     re_path(r'staff/store/', views.ShopStaffIndexView.as_view(), name='index'),
