@@ -100,7 +100,7 @@ class StaffCartUpdateView(DetailView):
         context = super().get_context_data(**kwargs)
 
         data = get_base_context_data(self.request)
-        data['cart'] = CartSerializer(self.object).data
+        data['cart_data'] = CartSerializer(self.object).data
 
         self.update_sharedData(context, data)
 
