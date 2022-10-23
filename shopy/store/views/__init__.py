@@ -2,8 +2,10 @@
 
 # from django.db.models.functions import Cast
 # from django.db.models import Count, CharField
+# import requests
 # from pprint import pprint
 from miq.analytics.models import Bot
+# from miq.analytics.models import  Hit
 from django.db import models
 from ..models import ProductHit
 from django.contrib.sites.shortcuts import get_current_site
@@ -24,10 +26,12 @@ from ..serializers import ShopSettingSerializer, get_product_serializer_class, g
 from ..models import Product, Category, SupplierOrder, ShopSetting, SupplierChoices, ProductStages
 
 from .v_product import StaffProductsView, StaffProductView
+from .v_category import StaffCategoryView
 
 __all__ = (
     'ShopStaffIndexView',
-    'StaffProductsView', 'StaffProductView'
+    'StaffProductsView', 'StaffProductView',
+    'StaffCategoryView'
 )
 
 
@@ -113,3 +117,21 @@ class ShopStaffIndexView(IndexView):
         if has_issues:
             data['issues'] = issues
             data['has_issues'] = has_issues
+
+
+# qs = Hit.objects.all()
+# # qs = qs.filter(parsed_data__from_ref__icontains='facebook.com')
+# qs = qs.filter(parsed_data__from_ref__isnull=False)
+# qs = qs.values('parsed_data__from_ref').annotate(c=models.Count('parsed_data__from_ref')).order_by('-c')
+
+# # pprint(list(qs[:16]))
+
+
+# v = ProductHit.objects.first()
+# v = Bot.objects.all()[11]
+# ip = v.ip
+
+# # r = requests.get(f'https://ipapi.co/{ip}/json/').json()
+
+# print(ip)
+# # pprint(r)

@@ -10,8 +10,13 @@ logger = logging.getLogger(__name__)
 # https://www.facebook.com/business/help/120325381656392?id=725943027795860
 
 
-def get_category_options() -> dict:
+def get_category_options(top: bool = False, exclude: list = None) -> dict:
     cats = Category.objects.all()
+    if top:
+        cats = cats.filter(parent__isnull=True)
+    if isinstance(exclude, list):
+        cats = cats.exclude(slug__in=exclude)
+
     return {
         'count': cats.count(),
         'items': [

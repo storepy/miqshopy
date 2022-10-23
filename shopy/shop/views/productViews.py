@@ -200,7 +200,8 @@ class FBSerializer(serializers.ModelSerializer):
             'sale_price', 'additional_image_link', 'product_type',
             'size', 'gender', 'inventory',
             'item_group_id', 'age_group', 'color',
-            'google_product_category', 'custom_label_0',
+            'google_product_category',
+            'custom_label_0', 'custom_label_1'
         )
 
     id = serializers.CharField(source='meta_slug', read_only=True)
@@ -228,8 +229,16 @@ class FBSerializer(serializers.ModelSerializer):
     age_group = serializers.SerializerMethodField()
 
     # Use for filtering products to sets
-    custom_label_0 = serializers.CharField(source='category.name', read_only=True)
+    custom_label_0 = serializers.SerializerMethodField()
+    custom_label_1 = serializers.CharField(source='category.name', read_only=True)
 #
+
+    def get_custom_label_0(self, inst):
+        cat = inst.category
+
+        if cat.parent:
+            return cat.parent.name
+        return cat.name
 
     def get_age_group(self, inst):
         """

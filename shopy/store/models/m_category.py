@@ -1,4 +1,5 @@
 import logging
+from unicodedata import category
 
 from django.db import models
 from django.urls import reverse_lazy
@@ -18,6 +19,11 @@ class Category(BaseModelMixin):
     page = models.OneToOneField(
         'store.CategoryPage', on_delete=models.PROTECT, blank=True,
         related_name='shopy_category')
+
+    parent = models.ForeignKey(
+        'self', verbose_name=_("Parent category"), on_delete=models.PROTECT,
+        blank=True, null=True, related_name='children'
+    )
 
     cover = models.OneToOneField(
         'core.Image', verbose_name=_("Cover"), on_delete=models.SET_NULL,
@@ -50,6 +56,13 @@ class Category(BaseModelMixin):
 
     objects = CategoryManager()
 
+    def get_products(self):
+        from .productModel import Product
+        return Product.objects.filter(
+            models.Q(category=self)
+            | models.Q(category__in=self.children.all())
+        ).distinct()
+
     def get_hit_data(self):
         data = super().get_hit_data()
         data.update({
@@ -62,6 +75,9 @@ class Category(BaseModelMixin):
         return data
 
     def save(self, *args, **kwargs):
+        if self.parent and self.parent.pk == self.pk:
+            raise Exception("Can't be own parent")
+
         if self.is_published and not self.dt_published:
             self.dt_published = timezone.now()
             logger.info(f'[{self.name}]: Added dt published')
@@ -73,7 +89,7 @@ class Category(BaseModelMixin):
 
         super().save(*args, **kwargs)
 
-    def publish(self):
+    def publish(self,):
         assert self.meta_slug, 'Category must have a meta slug'
         assert self.meta_title, 'Category must have a meta title'
 
@@ -86,6 +102,15 @@ class Category(BaseModelMixin):
         self.save()
         logger.info(f'[{self.name}]: Published')
 
+    def unpublish(self,):
+        if not self.is_published:
+            logger.error(f'[{self.name}]: Not published')
+            return
+
+        self.is_published = False
+        self.save()
+        logger.info(f'[{self.name}]: Unpublished')
+
     def get_is_public(self):
         return self.meta_slug and self.is_published
 
@@ -95,10 +120,8 @@ class Category(BaseModelMixin):
 
     def __str__(self):
         return capfirst(self.name)
-        
+
     class Meta:
         ordering = ('position', '-created', 'name')
         verbose_name = 'Category'
         verbose_name_plural = 'Categories'
-
-    

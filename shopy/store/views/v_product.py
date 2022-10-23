@@ -4,7 +4,7 @@ from django.contrib.sites.shortcuts import get_current_site
 
 from miq.core.models import Currencies
 from miq.core.serializers import serialize_context_pagination
-from miq.staff.views.generic import DetailView, ListView
+from miq.staff.views.generic import ListView
 
 from ..utils import get_category_options
 from ..viewsets.product import get_product_qs

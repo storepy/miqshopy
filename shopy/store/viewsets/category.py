@@ -31,11 +31,9 @@ class CategoryViewset(ViewSetMixin, viewsets.ModelViewSet):
         obj = self.get_object()
         obj_id = obj.id
         pub = request.data.get('is_published', False)
-        if not pub:
-            obj.is_published = False
-            obj.save()
 
-            log.info(f'unpublished category[{obj_id}]')
+        if not pub:
+            obj.unpublish()
             return self.retrieve(self, request, *args, **kwargs)
 
         log.info(f'Publishing category[{obj_id}]: {pub}')

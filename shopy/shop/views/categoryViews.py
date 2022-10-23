@@ -37,7 +37,8 @@ class CategoryView(ViewMixin, ListView):
         return ctx
 
     def get_queryset(self):
-        return self.category.products.published().order_for_shop()
+        return self.category.get_products().published().order_for_shop()
+        # return self.category.products.published().order_for_shop()
 
     def dispatch(self, request, *args, **kwargs):
         self.category = get_object_or_404(

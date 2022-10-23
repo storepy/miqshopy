@@ -23,6 +23,14 @@ def get_category_serializer_class(*, extra_fields=(), extra_read_only_fields=(),
 
     ImgSerializer = img_serializer or ProductImageSerializer
 
+    if 'parent' in fields:
+        props['parent'] = serializers.SlugRelatedField(
+            slug_field="slug", queryset=Category.objects.all(), required=False, allow_null=True
+        )
+
+    if 'parent_name' in read_only_fields and 'parent' in fields:
+        props['parent_name'] = serializers.CharField(source='parent.name', read_only=True)
+
     if 'cover' in fields:
         props['cover'] = serializers.SlugRelatedField(
             slug_field="slug", queryset=Image.objects.all(), required=False
@@ -45,12 +53,12 @@ def get_category_serializer_class(*, extra_fields=(), extra_read_only_fields=(),
 
 CategorySerializer = get_category_serializer_class(
     extra_read_only_fields=(
-        'slug', 'dt_published', 'cover_data', 'is_published',
+        'slug', 'parent_name', 'dt_published', 'cover_data', 'is_published',
         'products_count', 'published_count', 'draft_count',
         'created', 'updated'
     ),
     extra_fields=(
-        'name', 'description', 'cover', 'position',
+        'parent', 'name', 'description', 'cover', 'position',
         'meta_title', 'meta_slug', 'meta_description',
     )
 )

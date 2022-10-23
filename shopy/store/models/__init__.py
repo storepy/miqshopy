@@ -3,7 +3,7 @@
 # from django.utils.text import slugify
 
 
-from .categoryModel import Category
+from .m_category import Category
 
 from .productSizeAttrModels import ProductAttribute, ProductSize
 from .productModel import Product, ProductStage, ProductStages

@@ -26,6 +26,9 @@ urlpatterns = [
     path(f'staff/{app_name}/products/',
          views.StaffProductsView.as_view(), name='staffproducts'),
 
+    path(f'staff/{app_name}/categories/<slug:slug>/',
+         views.StaffCategoryView.as_view(), name='staffcategory'),
+
     # Catch-all
     re_path(r'staff/store/', views.ShopStaffIndexView.as_view(), name='index'),
 ]
