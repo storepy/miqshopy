@@ -1,3 +1,5 @@
+import hashlib
+from django.utils.crypto import get_random_string
 import logging
 from decimal import Decimal
 
@@ -17,6 +19,10 @@ logger = logging.getLogger(__name__)
 User = get_user_model()
 
 # Abandonned cart->placed?->cart->paid?->order->delivered?->sale
+
+
+def get_transaction_id(instance):
+    return hashlib.shake_128(bytes(f'{instance.slug}', encoding='utf-8')).hexdigest(4)
 
 
 class Order(BaseModelMixin):
@@ -94,6 +100,12 @@ class Order(BaseModelMixin):
     def items_count(self):
         return sum(item.quantity for item in self.items.all())
 
+    def save(self, *args, **kwargs):
+        if not self.transaction_id:
+            self.transaction_id = get_transaction_id(self)
+
+        return super().save(*args, **kwargs)
+
     def delete(self, *args, **kwargs):
         if self.is_paid:
             raise Exception('Cannot delete paid order')
@@ -137,6 +149,7 @@ class Cart(Order):
         # self.items.update(size__quantity=models.F('size__quantity') - models.F('quantity'))
 
         self.is_paid = True
+        self.transaction_id = get_transaction_id(self)
         self.save()
         logger.info(f'Cart[{self.id}] paid')
 

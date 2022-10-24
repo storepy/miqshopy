@@ -94,7 +94,7 @@ class CartSerializer(CartSerializerMixin, serializers.ModelSerializer):
 
 
 def get_cart_serializer_class(*, request=None, extra_fields=(), extra_read_only_fields=()):
-    read_only_fields = ('slug', 'customer_name', 'products', *extra_read_only_fields)
+    read_only_fields = ('slug', 'customer_name', 'products', 'subtotal', 'total', *extra_read_only_fields)
     fields = (*read_only_fields, *extra_fields)
 
     props = {
@@ -128,14 +128,33 @@ ORDER
 """
 
 
-class OrderSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Order
-        read_only_fields = (
-            'slug', 'customer', 'customer_data', 'total',
-            'is_delivered', 'dt_delivered', 'items', 'items_count', 'added_by',
-            'created', 'updated')
-        fields = (
-            'products', 'notes', 'dt_delivery',
-            *read_only_fields
-        )
+def get_order_serializer_class(*, request=None, extra_fields=(), extra_read_only_fields=()):
+    read_only_fields = ('slug', 'customer_name', 'subtotal', 'total', *extra_read_only_fields)
+    fields = (*read_only_fields, *extra_fields)
+
+    props = {
+        'Meta': type('Meta', (), {
+            'model': Order,
+            'read_only_fields': read_only_fields,
+            'fields': fields,
+        }),
+        'customer_name': serializers.CharField(source='customer.name', read_only=True),
+        'subtotal': serializers.SerializerMethodField(read_only=True),
+        'total': serializers.SerializerMethodField(read_only=True),
+    }
+
+    if 'customer_data' in read_only_fields:
+        props['customer_data'] = CustomerSerializer(read_only=True, source='customer')
+
+    if 'items' in read_only_fields:
+        props['items'] = OrderItemSerializer(read_only=True, many=True)
+
+    return type('OrderSerializer', (CartSerializerMixin, serializers.ModelSerializer), props)
+
+
+OrderSerializer = get_order_serializer_class(
+    extra_fields=('is_delivered',),
+    extra_read_only_fields=(
+        'transaction_id', 'customer_data', 'items',
+        'items_count', 'dt_delivered', 'created', 'updated')
+)

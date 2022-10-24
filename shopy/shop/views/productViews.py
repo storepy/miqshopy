@@ -27,25 +27,14 @@ from .mixins import ViewMixin
 price_ranges = ['5000', '10000', '25000', '50000']
 
 
-def create_hit(request, response, item, itemtype):
+def create_product_hit(request, response, instance):
+    customer = request.customer
+    _ = get_hit_data(request, response)
+    filter = {'url': _['url'], 'user_agent': _['user_agent'], 'ip': _['ip'], }
 
-    _data = get_hit_data(request, response)
-    filter = {'url': _data['url'], 'user_agent': _data['user_agent'], 'ip': _data['ip'], }
-    model = ProductHit if itemtype == 'product' else CategoryHit
-    if itemtype == 'product':
-        filter.update({'product': item})
-    elif itemtype == 'category':
-        filter.update({'category': item})
-
-    cus_slug = request.session.get('_cus') or None
-    customer = None
-
-    if cus_slug:
-        customer = Customer.objects.filter(slug=cus_slug).first()
-
-    hits = model.objects.filter(**filter)
+    hits = ProductHit.objects.filter(**filter)
     if not hits.exists():
-        return model.objects.create(**filter, customer=customer)
+        return ProductHit.objects.create(**filter, product=instance, customer=customer)
 
     hit = hits.first()
     hit.count += 1
@@ -61,13 +50,14 @@ class ProductView(ViewMixin, DetailView):
     template_name = 'shop/product.django.html'
 
     def dispatch(self, request, *args, **kwargs):
-        r = request.GET.get('r')
         response = super().dispatch(request, *args, **kwargs)
+
+        r = request.GET.get('r')
         if r == '1' and (num := SiteSetting.objects.get(site=get_current_site(request)).whatsapp_number):
-            response = redirect(self.object.get_whatsapp_link(num, request))
+            response = redirect(self.get_object().get_whatsapp_link(num, request))
 
         try:
-            create_hit(request, response, self.object, 'product')
+            create_product_hit(request, response)
         except Exception:
             pass
 

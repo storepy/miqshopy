@@ -172,3 +172,18 @@ class CartViewset(Mixin, viewsets.ModelViewSet):
 class OrderViewset(CartViewset):
     queryset = Order.objects.all()
     serializer_class = OrderSerializer
+
+    @action(methods=['post'], detail=True, url_path=r'deliver')
+    def mark_delivered(self, request, *args, ** kwargs):
+        try:
+            self.get_object().mark_delivered()
+        except Exception:
+            raise serializers.ValidationError({'order': 'Something went wrong'})
+
+        return self.retrieve(request, *args, ** kwargs)
+
+    def get_queryset(self):
+        if self.action in ('list', 'destroy'):
+            return Order.objects.none()
+
+        return super().get_queryset()

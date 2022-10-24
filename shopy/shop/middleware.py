@@ -8,9 +8,17 @@ from miq.core.utils import get_session
 from ..sales.models import Cart
 from ..sales.api import APICartSerializer
 
+from .utils import get_customer_from_session
+
 logger = logging.getLogger(__name__)
 loginfo = logger.info
 logerror = logger.error
+
+
+def get_customer(request):
+    if not hasattr(request, '_cached_customer'):
+        request._cached_customer = get_customer_from_session(request)
+    return request._cached_customer
 
 
 class ShopMiddleware(CurrentSiteMiddleware):
@@ -18,13 +26,12 @@ class ShopMiddleware(CurrentSiteMiddleware):
         self.get_response = get_response
 
     def __call__(self, request):
-        self.process_request(request)
+
+        request.site = get_current_site(request)
+        request.customer = get_customer(request)
 
         response = self.get_response(request)
         return response
-
-    def process_request(self, request):
-        request.site = get_current_site(request)
 
     def process_view(self, request, view_func, view_args, view_kwargs):
         pass

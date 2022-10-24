@@ -1,5 +1,6 @@
 import json
 
+from django.conf import settings
 from django.utils.text import capfirst
 from django.utils.text import Truncator
 from django.utils.safestring import mark_safe
@@ -11,8 +12,26 @@ import shopy
 from shopy.store.utils import intcomma
 from shopy.store.models import Category
 
+from shopy.sales.models import Customer
+
+CUSTOMER_SESSION_KEY = getattr(settings, 'CUSTOMER_SESSION_KEY', '_cus')
+
 
 # https://www.facebook.com/business/help/120325381656392?id=725943027795860
+
+def get_customer_from_session(request, customer_data=None):
+    if request.user.is_authenticated and (customer := getattr(request.user, 'customer', None)):
+        return customer
+
+    if cus_slug := request.session.get(CUSTOMER_SESSION_KEY, None):
+        if (cus := Customer.objects.filter(slug=cus_slug)).exists():
+            return cus.first()
+
+    if isinstance(customer_data, dict):
+        if (cus := Customer.objects.filter(phone=customer_data.get('phone', ''))).exists():
+            return cus.first()
+
+    return None
 
 
 def get_published_categories():

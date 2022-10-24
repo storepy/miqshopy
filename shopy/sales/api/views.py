@@ -91,7 +91,7 @@ def get_cart_from_session(request, /, customer=None):
             cart = cart.first()
         else:
             cart = Cart.objects.create(customer=customer)
-            print('creating cart')
+            logger.debug('creating cart')
     else:
         cart = Cart.objects.create(customer=customer)
 
@@ -117,7 +117,7 @@ def get_customer_from_session(request, customer_data):
             try:
                 cus = ser.save()
             except Exception as e:
-                print(e)
+                logerror(f'{e}')
                 raise serializers.ValidationError({'customer': _('Something went wrong')})
 
     request.session['_cus'] = f'{cus.slug}'
