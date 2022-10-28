@@ -186,7 +186,8 @@ class CategoryManager(ManagerMixin, models.Manager):
 
 
 class SupplierOrderQuerySet(models.QuerySet):
-    pass
+    def total(self):
+        return self.filter(is_paid=True).aggregate(total=models.Sum('total_cost'))['total']
 
 
 class SupplierOrderManager(ManagerMixin, models.Manager):

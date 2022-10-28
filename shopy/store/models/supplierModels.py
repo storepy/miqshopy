@@ -2,6 +2,7 @@
 
 from django.db import models
 from django.db.models import Avg
+from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
 from miq.core.models import BaseModelMixin, Currency
@@ -80,10 +81,13 @@ class SupplierOrder(BaseModelMixin):
     is_fulfilled_dt = models.DateTimeField(
         _("Date of fulfillment"), blank=True, null=True)
 
+    rate = models.FloatField(_("Rate"), null=True, blank=True)
+
     total_cost = models.DecimalField(
         max_digits=10, decimal_places=2, null=True, blank=True,
         help_text='FOB Price, excluding inbound shipping, taxes '
         'and others costs')
+    total_cost_at_rate_data = property(lambda self: price_to_dict(float(self.total_cost) * self.rate, self.currency))
 
     products = models.ManyToManyField(
         f'{app_name}.Product', verbose_name=_("Products"),
@@ -106,6 +110,18 @@ class SupplierOrder(BaseModelMixin):
         total = sum(item.cost for item in self.items.all())
         return price_to_dict(total, self.currency)
 
+    def mark_paid(self):
+        assert not self.is_paid, 'Order is already paid'
+        assert self.order_id, 'Order ID is required'
+        assert self.total_cost, 'Total cost is required'
+
+        self.is_paid = True
+        self.is_paid_dt = timezone.now()
+        self.save()
+
+    def __str__(self):
+        return self.name
+
     class Meta:
         verbose_name = _('Supplier Order')
         verbose_name_plural = _('Supplier Orders')
@@ -123,11 +139,13 @@ class SupplierItem(BaseModelMixin):
     item_sn = models.CharField(_("Item serial number"), max_length=200, null=True, blank=True)
     category = models.CharField(_("Supplier category"), max_length=200, null=True, blank=True)
     url = models.URLField(_("Supplier url"), max_length=900, null=True, blank=True)
-    cost = models.DecimalField(
-        max_digits=10, decimal_places=2, null=True, blank=True,
-        help_text='FOB Price, excluding inbound shipping, taxes '
-        'and others costs'
-    )
+
+    cost = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True,)
+    cost_data = property(lambda self: price_to_dict(self.cost, self.order.currency))
+
+    rate_data = property(lambda self: {'amount': self.order.rate, 'from': self.order.currency, 'to': 'XOF'})
+    cost_at_rate_data = property(lambda self: price_to_dict(float(self.cost) * self.order.rate, 'XOF'))
+
     data = models.JSONField(default=dict)
 
     def supplier(self):

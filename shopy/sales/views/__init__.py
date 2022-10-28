@@ -5,13 +5,20 @@ from miq.staff.views import IndexView
 
 from ...store.utils import price_to_dict
 from ...store.serializers import get_product_serializer_class
-from ...store.models import Product
+from ...store.models import Product, SupplierOrder
 
 from ..models import Cart, Order, Customer, OrderItem
 
 from .utils import get_sales_view_base_context_data
 from .v_order import StaffOrderDetailView, StaffOrderListView
 from .v_cart import StaffCartUpdateView, StaffCartUpdateItemsView
+
+
+__all__ = (
+    'StaffIndexView',
+    'StaffOrderListView', 'StaffOrderDetailView',
+    'StaffCartUpdateView', 'StaffCartUpdateItemsView',
+)
 
 
 ProductListSerializer = get_product_serializer_class(
@@ -33,6 +40,8 @@ class StaffSalesIndexView(IndexView):
         carts = Cart.objects.abandonned()
         placed = Cart.objects.placed()
 
+        supplier_orders = SupplierOrder.objects.all()
+
         customers = Customer.objects.filter(orders__is_paid=True)
         prospects = Customer.objects.filter(orders__is_paid=False)
 
@@ -45,6 +54,7 @@ class StaffSalesIndexView(IndexView):
 
         data.update({
             'total': price_to_dict(orders.total()),
+            'supplier_total': price_to_dict(supplier_orders.total(), currency='USD'),
             'orders_count': orders.count(),
             'carts_count': carts.count(),
             'placed_count': placed.count(),

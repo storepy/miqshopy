@@ -34,7 +34,7 @@ def price_to_dict(price_field, currency=None):
         logger.debug(f'Invalid price_field: {price_field}')
         return
 
-    currency = get_currency()
+    currency = currency or get_currency()
     amt: str = f'{price_field} {currency}'
     if currency in ['XOF', 'XAF']:
         amt = f'{intcomma(int(price_field))} CFA'

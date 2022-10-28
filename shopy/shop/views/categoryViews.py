@@ -12,6 +12,7 @@ from .mixins import ViewMixin
 class CategoryView(ViewMixin, ListView):
     model = Product
     category = None  # type: 'Category'
+    paginate_by: int = 12
     template_name = 'shop/products.django.html'
 
     def get_context_data(self, **kwargs) -> dict:

@@ -1,4 +1,5 @@
 
+import requests
 import math
 import json
 import logging
@@ -37,24 +38,21 @@ loginfo = log.info
 logerror = log.error
 
 
-def estimate_retail_price(cost, frm=Currency.USD, to=Currency.XOF):
+def estimate_retail_price(cost, rate=None, frm=Currency.USD, to=Currency.XOF):
     if not cost:
         return 0
 
-    usd2xof = 654.238
+    usd2xof = rate or 654.238
     cost = float(cost)
-    # revenue(cost*2) + cpa(cost*2/5)
-    min_retail = (cost * 2) + (cost * (2 / 5))
+    # revenue(cost*2) + cpa(cost*2/5) + shipping(cost*2/5) + profit(cost*2/5)
+    min_retail = (cost * 2) + 3 * (cost * (2 / 5))
     return int(math.ceil(min_retail * usd2xof))
     # return int(float(cost) * 2.6 * 600)
 
 
 def add_product_images(product, product_data: dict, user=None):
     name = product_data.get('name')
-    img_data = {
-        # 'site': get_current_site(self.request),
-    }
-
+    img_data = {}
     if user:
         img_data['user'] = user
 
@@ -101,7 +99,7 @@ def add_product_attributes(product, product_data: dict):
 
 
 def add_shein_product_to_order(order, data, user=None, url=None):
-    p_name = clean_product_name(data.get('name'))
+    p_name = clean_product_name(data.get('name'))[:99]
     goods_id = data.get('id')
 
     qs = Product.objects
@@ -301,6 +299,15 @@ class SupplierOrderViewset(ViewSetMixin, viewsets.ModelViewSet):
         )
         return self.retrieve(request, *args, **kwargs)
 
+    @action(methods=['post'], detail=True, url_path=r'pay')
+    def mark_paid(self, request: 'http.HttpRequest', *args: tuple, **kwargs: dict) -> 'Response':
+        try:
+            self.get_object().mark_paid()
+        except Exception as e:
+            raise serializers.ValidationError({'order': str(e)})
+
+        return self.retrieve(request, *args, **kwargs)
+
     def update(self, request, *args, **kwargs):
         r = super().update(request, *args, **kwargs)
         stage = request.data.get('stage')
@@ -373,14 +380,19 @@ def add_order_feed(request, supplier, *args, **kwargs):
     if not request.method == 'POST':
         return http.JsonResponse({'ok': True})
 
+    if not supplier:
+        return http.JsonResponse({'supplier': 'Required'}, status=400)
+
     payload = json.loads(request.body)
 
     order = SupplierOrder.objects.filter(slug=kwargs.get('order_slug'))
     if not order.exists():
         return http.JsonResponse({'order_slug': 'Invalid order'}, status=404)
 
-    if not supplier:
-        return http.JsonResponse({'supplier': 'Required'}, status=400)
+    order = order.first()
+    if not order.rate:
+        order.rate = get_usd_xof_rate()
+        order.save()
 
     if supplier.lower() == 'shein':
         add_shein_product_to_order(order.first(), payload, url=payload.get('url'), user=User.objects.first())
@@ -389,3 +401,8 @@ def add_order_feed(request, supplier, *args, **kwargs):
         add_plt_product_to_order(order.first(), payload, url=payload.get('url'), user=User.objects.first())
 
     return http.JsonResponse({'ok': True})
+
+
+def get_usd_xof_rate():
+    url = 'https://cdn.jsdelivr.net/gh/fawazahmed0/currency-api@1/latest/currencies/usd/xof.json'
+    return requests.get(url).json().get('xof')
