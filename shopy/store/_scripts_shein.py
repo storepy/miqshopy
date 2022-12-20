@@ -1,6 +1,6 @@
 
-import random
 import time
+import random
 import requests
 
 from utils_crawler import shein_url_to_data
@@ -8,6 +8,17 @@ from _scripts_constants import domain, baseheaders
 
 
 """
+Array.from(trs).forEach((i=>{
+    const data = {}
+    Array.from(i.getElementsByClassName('ga-order-goods')).forEach(link=>{
+        data.href = link.getAttribute('href');
+    });
+    
+    console.log(data)
+}))
+
+
+
 const getSheinOrderProductLinks = () => {
   const r = document.getElementsByClassName('ga-order-goods');
   const links = [];
@@ -23,40 +34,22 @@ const getSheinOrderProductLinks = () => {
   console.log(txt);
   return links;
 };
+
+
+
 """
 
 
-order_slug = '0eeefd77-2ebd-4c43-9425-559219a2fc28'  # local
-order_slug = '90e89872-7d6d-46a3-8122-3d1f62ffe9f6'
+order_slug = '03ec7a72-3629-4c74-b4bc-6c077e8ccae6'  # local
+# order_slug = ''
 
 
-p_ = [
-    'https://www.shein.com/Structured-Cuff-Choker-p-11214980-cat-1755.html?mallCode=1',
-    'https://www.shein.com/Wave-Design-Cuff-Choker-p-11500541-cat-1755.html?mallCode=1',
-    'https://www.shein.com/Minimalist-Cuff-Choker-p-11275860-cat-1755.html?mallCode=1',
-    'https://www.shein.com/Minimalist-Cuff-Choker-p-11073905-cat-1755.html?mallCode=1',
-    'https://www.shein.com/Solid-Minimalist-Layered-Cuff-Choker-p-11375205-cat-1755.html?mallCode=1',
-    'https://www.shein.com/Solid-Minimalist-Layered-Choker-p-11375203-cat-1755.html?mallCode=1',
-    'https://www.shein.com/Minimalist-Layered-Cuff-Choker-p-11143322-cat-1755.html?mallCode=1',
-    'https://www.shein.com/Snake-Decor-Choker-p-11271928-cat-1755.html?mallCode=1',
-    'https://www.shein.com/Knot-Decor-Cuff-Choker-p-11093360-cat-1755.html?mallCode=1',
-    'https://www.shein.com/Minimalist-Cuff-Choker-p-11275772-cat-1755.html?mallCode=1',
-    'https://www.shein.com/Cylindrical-Charm-Choker-p-11324983-cat-1755.html?mallCode=1',
-    'https://www.shein.com/Minimalist-Layered-Cuff-Choker-p-11073934-cat-1755.html?mallCode=1',
-    # '',
-    'https://www.shein.com/3pcs-Layered-Minimalist-Ring-p-11323858-cat-1759.html?mallCode=1',
-    'https://www.shein.com/2pcs-Circle-Decor-Ring-p-11275963-cat-1759.html?mallCode=1',
-    'https://www.shein.com/4pcs-Minimalist-Metal-Ring-p-11205845-cat-1759.html?mallCode=1',
-    'https://www.shein.com/Hollow-Out-Cuff-Choker-p-11073992-cat-1755.html?mallCode=1',
-]
+p_ = []
 
 
 count = len(set(p_))
 
-headers = {
-    **baseheaders,
-    'referrer': 'https://us.shein.com/'
-}
+headers = {**baseheaders}
 
 s = requests.Session()
 errors = []
@@ -68,6 +61,7 @@ def post(url):
     api = f'{domain}/shop/feed/{order_slug}/shein/'
 
     data = shein_url_to_data(url)
+
     if not data:
         print('Data ERROR', data)
         return
@@ -95,7 +89,12 @@ for link in set(p_):
     if not link:
         continue
 
-    post(link)
+    try:
+        post(link)
+    except Exception as e:
+        print('Error in post', link)
+        print(e)
+
     if len(p_) > 1:
         time.sleep(random.randint(1, 5))
 

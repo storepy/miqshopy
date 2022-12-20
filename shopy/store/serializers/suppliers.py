@@ -41,7 +41,9 @@ class SupplierOrderSerializer(ModelSerializer):
     def get_total_cost_at_rate_data(self, obj: SupplierOrder) -> dict:
         if obj.is_paid:
             return obj.total_cost_at_rate_data
-        return price_to_dict(float(obj.get_items_cost().get('amount')) * obj.rate, obj.currency)
+
+        rate = obj.rate or 1.00
+        return price_to_dict(float(obj.get_items_cost().get('amount') or 0.00) * rate, obj.currency) if obj.get_items_cost() else 0.00
 
     def get_total_cost_data(self, inst: SupplierOrder) -> dict:
         if inst.is_paid:

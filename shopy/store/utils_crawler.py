@@ -1,15 +1,17 @@
 
-import pprint
 import re
 import json
 import requests
+from pprint import pprint
 from bs4 import BeautifulSoup
+from urllib.parse import urlparse
 
 from miq.core.utils import clean_img_url, get_dict_key
 
+SUPPLIER_SHEIN = 'SHEIN'
 
 SUPPLIER_MAP = {
-    'SHEIN': {
+    SUPPLIER_SHEIN: {
         'name': 'SHEIN',
         'keys': {
 
@@ -54,15 +56,31 @@ SUPPLIER_MAP = {
 }
 
 
-headers = {
-    "user-agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.198 Safari/537.36"
+_s = requests.Session()
+_s.headers = {
+    # "user-agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/89.0.4240.198 Safari/537.36",
+    "user-agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 10_3_1 like Mac OS X) AppleWebKit/603.1.30 (KHTML, like Gecko) Version/10.0 Mobile/14E304 Safari/602.1"
 }
 
-_s = requests.Session()
+
+def print_session(session=_s):
+    print('-<\n-')
+    pprint(dict(_s.cookies))
+    print('---------------\n-\n-')
+    pprint(_s.headers)
+
+    print('Session:')
 
 
-def get(url):
-    return _s.get(url, headers=headers)
+def get(url, **kwargs):
+    return _s.get(
+        url,
+        headers={
+            "user-agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 10_3_1 like Mac OS X) AppleWebKit/603.1.30 (KHTML, like Gecko) Version/10.0 Mobile/14E304 Safari/602.1"
+        },
+        cookies=kwargs.get('cookies', ),
+        allow_redirects=False
+    )
 
 
 terms = [
@@ -129,23 +147,40 @@ def plt_url_to_data(url: str) -> dict:
 
 
 def shein_url_to_data(url: str):
+    assert url, 'shein product url required'
+
     goods_id = shein_goods_id_from_url(url)
     if not goods_id:
-        return
+        raise Exception('shein goods_id not found in url: ' + url)
+
+    parsed_url = urlparse(url)
+    if 'us.shein.com' not in parsed_url.netloc:
+        url = 'https://us.shein.com' + parsed_url.path
+
+    data = get_shein_us_data(url, goods_id)
+    # if 'us.shein.com' in urlparse(url).netloc:
+    #     data = get_shein_us_data(url, goods_id)
+    # else:
+    #     data = get_shein_com_data(url, goods_id)
+
+    if (cover := data.get('cover')) and isinstance(cover, str):
+        data['cover'] = clean_img_url(cover)
+
+    data['url'] = url
+
+    return data
+
+
+def get_shein_com_data(url: str, goods_id: str):
+    assert url and goods_id, 'shein product url/goods_id required'
 
     raw = shein_data_from_mobile(goods_id, url)
-    _raw = shein_data_from_web(goods_id, url)
-    if not raw:
-        raw = _raw
+    assert isinstance(raw, dict), 'shein_data_from_mobile() failed'
 
-    if not isinstance(raw, dict):
-        return
+    data = load_raw_data(raw, SUPPLIER_SHEIN)
+    data.update(get_shein_us_price(goods_id))
 
-    supplier = 'SHEIN'
-    data = load_raw_data(raw, supplier)
-    _data = load_raw_data(_raw, supplier)
-
-    data['cost'] = min(_data.get('retail_price', 0), _data.get('sale_price', 0))
+    data['cost'] = min(data.get('retail_price', 0), data.get('sale_price', 0))
 
     data['attrs'] = [
         {
@@ -157,10 +192,37 @@ def shein_url_to_data(url: str):
         clean_img_url(img.get('origin_image'))
         for img in raw.get('goods_imgs').get('detail_image', [])
     ]
-    if (cover := data.get('cover')) and isinstance(cover, str):
-        data['cover'] = clean_img_url(cover)
 
-    data['url'] = url
+    return data
+
+
+def get_shein_us_data(url: str, goods_id: str):
+    assert url and goods_id, 'shein product url/goods_id required'
+
+    raw = shein_data_from_mobile(goods_id, url)
+
+    # _raw = shein_data_from_web(goods_id, url)
+    # if not raw:
+    #     raw = _raw
+
+    assert isinstance(raw, dict), 'Could not get data from url: ' + url
+
+    data = load_raw_data(raw, SUPPLIER_SHEIN)
+    # _data = load_raw_data(_raw, SUPPLIER_SHEIN)
+
+    data['cost'] = min(data.get('retail_price', 0), data.get('sale_price', 0))
+    # data['cost'] = min(_data.get('retail_price', 0), _data.get('sale_price', 0))
+
+    data['attrs'] = [
+        {
+            'name': attr.get('attr_name', attr.get('attr_name_en')),
+            'value': attr.get('attr_value', attr.get('attr_value_en')),
+        } for attr in raw.get('detail', {}).get('productDetails', [])
+    ]
+    data['imgs'] = [
+        clean_img_url(img.get('origin_image'))
+        for img in raw.get('goods_imgs').get('detail_image', [])
+    ]
 
     return data
 
@@ -168,9 +230,7 @@ def shein_url_to_data(url: str):
 def shein_data_from_mobile(goods_id: str, url: str):
     api_url = f'https://m.shein.com/fr/product-xhr-{goods_id}.html?currency=USD&fromSpa=1&withI18n=0&_ver=1.1.8&_lang=fr'
     r = get(api_url)
-    if r.status_code != 200:
-        print('Request failed with status code', r.status_code, '\n', url, '\n')
-        return
+    assert r.status_code == 200, 'Request failed with status code ' + str(r.status_code) + '\n' + url + f'\n{r.text}'
 
     try:
         return r.json()
@@ -178,26 +238,58 @@ def shein_data_from_mobile(goods_id: str, url: str):
         pass
 
 
+def get_shein_us_price(goods_id: str):
+    api_url = 'https://www.shein.com/atomic/getAtomicInfo?_ver=1.1.8&_lang=en'
+
+    r = _s.post(api_url, json={
+        "atomicParams": [{"mall_code": "1", "goods_id": goods_id}],
+        "fields": {"realTimePricesWithPromotion": True}
+    })
+    if r.status_code != 200:
+        print('Request failed with status code', r.status_code, '\n')
+        return
+
+    try:
+        return {
+            'retail_price': get_dict_key(r.json(), f'data__{goods_id}__retailPrice').get('amount'),
+            'sale_price': get_dict_key(r.json(), f'data__{goods_id}__salePrice').get('amount'),
+            'is_on_sale': '0' if get_dict_key(r.json(), f'data__{goods_id}__unit_discount') == '0' else '1'
+
+        }
+    except Exception:
+        pass
+
+
 def shein_data_from_web(goods_id: str, url: str):
     api_url = f'https://us.shein.com/product-itemv2-{goods_id}.html?_lang=en&_ver=1.1.8'
+
+    # m_url = 'https://m.shein.com' + urlparse(url).path
+    # _s.cookies.clear()
+
     r = get(api_url)
+    print(r.json())
     if r.status_code != 200:
         print('Request failed with status code', r.status_code, '\n', url, '\n')
         return
 
-    soup = BeautifulSoup(r.text, 'html.parser')\
-        .find("script", text=re.compile('productIntroData'))
-    if not soup:
-        return
+    soup = BeautifulSoup(r.text, 'html.parser')
+    soup = soup.find("script", text=re.compile('productIntroData'))
+
+    assert isinstance(f'{soup}', str), 'invalid soup'
 
     script = soup.string
     start = re.search('productIntroData: ', script)
     end = re.search('abt: {"', script)
+
+    assert start and end, 'shein_data_from_web() failed'
+
     if not start or not end:
         return
 
     script = script[start.end():end.start()].strip()[:-1]
-    return json.loads(script)
+    data = json.loads(script)
+    assert isinstance(data, dict), 'shein_data_from_web() failed'
+    return data
 
 
 def shein_goods_id_from_url(url: str):

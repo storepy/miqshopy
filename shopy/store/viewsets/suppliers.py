@@ -42,6 +42,24 @@ def estimate_retail_price(cost, rate=None, frm=Currency.USD, to=Currency.XOF):
     if not cost:
         return 0
 
+    if cost == 1:
+        return 2500
+
+    if cost == 1.5:
+        return 3000
+
+    if cost == 2:
+        return 3500
+
+    if cost == 2.5:
+        return 4500
+
+    if cost == 3:
+        return 5000
+
+    if cost == 3.5:
+        return 6000
+
     usd2xof = rate or 654.238
     cost = float(cost)
     # revenue(cost*2) + cpa(cost*2/5) + shipping(cost*2/5) + profit(cost*2/5)
@@ -395,10 +413,10 @@ def add_order_feed(request, supplier, *args, **kwargs):
         order.save()
 
     if supplier.lower() == 'shein':
-        add_shein_product_to_order(order.first(), payload, url=payload.get('url'), user=User.objects.first())
+        add_shein_product_to_order(order, payload, url=payload.get('url'), user=User.objects.first())
 
     if supplier.lower() == 'plt':
-        add_plt_product_to_order(order.first(), payload, url=payload.get('url'), user=User.objects.first())
+        add_plt_product_to_order(order, payload, url=payload.get('url'), user=User.objects.first())
 
     return http.JsonResponse({'ok': True})
 
