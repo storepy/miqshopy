@@ -15,11 +15,20 @@ CUSTOMER
 """
 
 
-class CustomerSerializer(serializers.ModelSerializer):
+class CustomerSerializerMixin:
+    def get_total_amount_spent(self, obj):
+        # if not obj.total:
+        #     return price_to_dict(0)
+        return price_to_dict(obj.get_total_amount_spent())
+
+
+class CustomerSerializer(CustomerSerializerMixin, serializers.ModelSerializer):
     class Meta():
         model = Customer
-        read_only_fields = ('slug', 'name', 'user', 'created', 'updated')
+        read_only_fields = ('slug', 'name', 'user', 'total_amount_spent', 'created', 'updated')
         fields = ('first_name', 'last_name', 'phone', 'email', *read_only_fields)
+
+    total_amount_spent = serializers.SerializerMethodField(read_only=True)
 
 
 def get_customer_serializer_class(*, extra_fields=(), extra_read_only_fields=()):
@@ -36,21 +45,26 @@ def get_customer_serializer_class(*, extra_fields=(), extra_read_only_fields=())
     props = {
         'Meta': type('Meta', (), {
             'model': Customer,
-            'read_only_fields': read_only_fields,
             'fields': fields,
+            'read_only_fields': read_only_fields,
         }),
         # 'customer_name': serializers.CharField(source='customer.name', read_only=True),
-        # 'subtotal': serializers.SerializerMethodField(read_only=True),
         # 'total': serializers.SerializerMethodField(read_only=True),
     }
+
+    if 'total_amount_spent' in read_only_fields:
+        props['total_amount_spent']: serializers.SerializerMethodField(read_only=True)
 
     if 'orders_count' in read_only_fields:
         props['orders_count'] = serializers.IntegerField(read_only=True, source='orders.count')
 
+    if 'spent' in read_only_fields:
+        props['spent'] = serializers.ReadOnlyField(read_only=True,)
+
     # if 'items' in read_only_fields:
     #     props['items'] = OrderItemSerializer(read_only=True, many=True)
 
-    return type('CustomerSerializer', (serializers.ModelSerializer,), props)
+    return type('CustomerSerializer', (CustomerSerializerMixin, serializers.ModelSerializer,), props)
 
 
 """

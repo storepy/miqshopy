@@ -53,6 +53,9 @@ class Customer(BaseModelMixin):
 
     objects = CustomerManager()
 
+    def get_total_amount_spent(self):
+        return self.orders.aggregate(models.Sum('total'))['total__sum']
+
     def name(self) -> str:
         return f'{self.first_name} {self.last_name}'
 
@@ -60,6 +63,12 @@ class Customer(BaseModelMixin):
         if self.email == '':
             self.email = None
         super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        if self.orders.count() > 0:
+            raise Exception('Customer has orders')
+
+        return super().delete(*args, **kwargs)
 
     def __str__(self):
         return self.user.username if self.user else self.phone

@@ -4,14 +4,10 @@
 from miq.staff.views.generic import DetailView, ListView
 from miq.core.serializers import serialize_context_pagination
 
-from ..models import Order, Customer
-from ..serializers import get_order_serializer_class, OrderSerializer, CustomerSerializer, get_customer_serializer_class
+from ..models import Customer
+from ..serializers import CustomerSerializer, get_customer_serializer_class
 
 from .utils import get_sales_view_base_context_data
-
-
-CustomerListSerializer = get_customer_serializer_class(extra_read_only_fields=('orders_count',))
-# CustomerListSerializer = get_order_serializer_class(extra_read_only_fields=('items_count', 'created'))
 
 
 class StaffCustomerDetailView(DetailView):
@@ -21,6 +17,7 @@ class StaffCustomerDetailView(DetailView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        context['title'] = 'Update Customer - Sales'
 
         data = get_sales_view_base_context_data(self.request)
         data['customer_data'] = CustomerSerializer(self.object).data
@@ -30,8 +27,11 @@ class StaffCustomerDetailView(DetailView):
         return context
 
 
+CustomerListSerializer = get_customer_serializer_class(extra_read_only_fields=('orders_count', 'spent'))
+
+
 class StaffCustomerListView(ListView):
-    model = Customer
+    queryset = Customer.objects.all().by_amount_spent().order_by('-created')
     template_name = 'store/base.django.html'
     slug_field = 'slug'
     paginate_by: int = 16

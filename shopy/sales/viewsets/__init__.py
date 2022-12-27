@@ -1,10 +1,11 @@
 
 from django.http import JsonResponse
 
-from rest_framework import viewsets, serializers
-from rest_framework.parsers import JSONParser
-from rest_framework.permissions import IsAdminUser
 from rest_framework.decorators import action
+from rest_framework.parsers import JSONParser
+from rest_framework import viewsets, serializers
+from rest_framework.permissions import IsAdminUser
+
 from miq.staff.mixins import LoginRequiredMixin
 from miq.core.permissions import DjangoModelPermissions
 
@@ -22,6 +23,11 @@ class Mixin(LoginRequiredMixin):
 class CustomerViewset(Mixin, viewsets.ModelViewSet):
     queryset = Customer.objects.all()
     serializer_class = CustomerSerializer
+
+    def destroy(self, request, *args, **kwargs):
+        if self.get_object().orders.exists():
+            raise serializers.ValidationError({'customer': 'Can not delete customer'})
+        return super().destroy(request, *args, **kwargs)
 
     def get_queryset(self):
         qs = super().get_queryset()

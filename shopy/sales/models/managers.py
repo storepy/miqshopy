@@ -9,6 +9,16 @@ from django.db.models.functions import Concat
 
 
 class CustomerQuerySet(models.QuerySet):
+    def by_amount_spent(self, order: str = None):
+
+        qs = self.annotate(spent=models.Sum('orders__total'))
+        if order == 'asc':
+            return qs.order_by('spent')
+        elif order == 'desc':
+            return qs.order_by('-spent')
+
+        return qs
+
     def find(self, q: str, **kwargs):
         if not isinstance(q, str):
             return self.none()

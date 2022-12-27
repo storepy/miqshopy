@@ -45,8 +45,6 @@ order_slug = '03ec7a72-3629-4c74-b4bc-6c077e8ccae6'  # local
 
 
 p_ = []
-
-
 count = len(set(p_))
 
 headers = {**baseheaders}

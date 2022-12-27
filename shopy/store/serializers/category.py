@@ -1,4 +1,4 @@
-# from pprint import pprint
+
 from rest_framework import serializers
 
 from miq.core.models import Image
