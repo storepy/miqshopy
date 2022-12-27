@@ -12,12 +12,14 @@ from ..models import Cart, Order, Customer, OrderItem
 from .utils import get_sales_view_base_context_data
 from .v_order import StaffOrderDetailView, StaffOrderListView
 from .v_cart import StaffCartUpdateView, StaffCartUpdateItemsView
+from .v_customer import StaffCustomerListView, StaffCustomerDetailView
 
 
 __all__ = (
     'StaffIndexView',
     'StaffOrderListView', 'StaffOrderDetailView',
     'StaffCartUpdateView', 'StaffCartUpdateItemsView',
+    'StaffCustomerListView', 'StaffCustomerDetailView',
 )
 
 

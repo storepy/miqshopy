@@ -19,10 +19,38 @@ class CustomerSerializer(serializers.ModelSerializer):
     class Meta():
         model = Customer
         read_only_fields = ('slug', 'name', 'user', 'created', 'updated')
-        fields = (
-            'first_name', 'last_name', 'phone', 'email',
-            *read_only_fields
-        )
+        fields = ('first_name', 'last_name', 'phone', 'email', *read_only_fields)
+
+
+def get_customer_serializer_class(*, extra_fields=(), extra_read_only_fields=()):
+    """
+    Returns a CustomerSerializer class with the given extra fields and read only fields.
+    read_only_fields = slug, name + extra_read_only_fields
+    extra_read_only_fields = user, orders_count, created, updated
+    extra_fields = first_name, last_name, phone, email
+    fields = (*read_only_fields, *extra_fields)
+    """
+    read_only_fields = ('slug', 'name', * extra_read_only_fields)
+    fields = (*read_only_fields, *extra_fields)
+
+    props = {
+        'Meta': type('Meta', (), {
+            'model': Customer,
+            'read_only_fields': read_only_fields,
+            'fields': fields,
+        }),
+        # 'customer_name': serializers.CharField(source='customer.name', read_only=True),
+        # 'subtotal': serializers.SerializerMethodField(read_only=True),
+        # 'total': serializers.SerializerMethodField(read_only=True),
+    }
+
+    if 'orders_count' in read_only_fields:
+        props['orders_count'] = serializers.IntegerField(read_only=True, source='orders.count')
+
+    # if 'items' in read_only_fields:
+    #     props['items'] = OrderItemSerializer(read_only=True, many=True)
+
+    return type('CustomerSerializer', (serializers.ModelSerializer,), props)
 
 
 """
