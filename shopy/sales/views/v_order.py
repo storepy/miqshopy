@@ -33,7 +33,7 @@ class StaffOrderListView(ListView):
     model = Order
     template_name = 'store/base.django.html'
     slug_field = 'slug'
-    paginate_by: int = 5
+    paginate_by: int = 12
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)

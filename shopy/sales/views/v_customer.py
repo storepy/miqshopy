@@ -34,7 +34,7 @@ class StaffCustomerListView(ListView):
     queryset = Customer.objects.all().by_amount_spent().order_by('-created')
     template_name = 'store/base.django.html'
     slug_field = 'slug'
-    paginate_by: int = 16
+    paginate_by: int = 12
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)

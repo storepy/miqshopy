@@ -8,7 +8,7 @@ from ...store.serializers import get_product_serializer_class
 from ...store.models import Product, SupplierOrder
 
 from ..models import Cart, Order, Customer, OrderItem
-
+from ..serializers import get_customer_serializer_class
 from .utils import get_sales_view_base_context_data
 from .v_order import StaffOrderDetailView, StaffOrderListView
 from .v_cart import StaffCartUpdateView, StaffCartUpdateItemsView
@@ -49,7 +49,7 @@ class StaffSalesIndexView(IndexView):
 
         items = OrderItem.objects.all()
 
-        top_cart = items.values('product__slug').annotate(
+        top_cart = items.filter(order__is_paid=False).values('product__slug').annotate(
             total=models.Count('product__slug')).order_by('-total')[:10]
         top_selling = items.filter(order__is_paid=True).values('product__slug').annotate(
             total=models.Count('product__slug')).order_by('-total')[:10]
@@ -62,6 +62,7 @@ class StaffSalesIndexView(IndexView):
             'placed_count': placed.count(),
 
             'customers_count': customers.count(),
+            'top_customers': get_customer_serializer_class(extra_read_only_fields=('orders_count',)).many_init(customers.by_amount_spent().order_by('-spent', )[:10]).data,
             'prospects_count': prospects.count(),
 
             'top_cart': [
