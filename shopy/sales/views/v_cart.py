@@ -15,7 +15,7 @@ CartSerializer = get_cart_serializer_class(
     extra_fields=('customer', 'notes', 'dt_delivery'),
     extra_read_only_fields=(
         'slug', 'customer_name', 'customer_data', 'is_placed',
-        'items', 'products',
+        'items', 'products', 'discounts',
         'subtotal', 'total', 'created', 'updated')
 )
 

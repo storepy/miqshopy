@@ -11,7 +11,7 @@ from miq.core.permissions import DjangoModelPermissions
 
 from ..api import add_item_to_cart
 from ..models import Cart, Order, Customer
-from ..serializers import OrderSerializer, CustomerSerializer, get_cart_serializer_class
+from ..serializers import OrderSerializer, CustomerSerializer, get_cart_serializer_class, DiscountSerializer
 
 
 class Mixin(LoginRequiredMixin):
@@ -45,14 +45,17 @@ class CustomerViewset(Mixin, viewsets.ModelViewSet):
         serializer.save(added_by=self.request.user)
 
 
-class CartViewset(Mixin, viewsets.ModelViewSet):
+class CartViewsMixin(Mixin):
+    pass
+
+
+class CartViewset(CartViewsMixin, viewsets.ModelViewSet):
     queryset = Cart.objects.all()
-    # serializer_class = CartSerializer
     serializer_class = get_cart_serializer_class(
         extra_fields=('customer', 'notes', 'dt_delivery'),
         extra_read_only_fields=(
             'slug', 'customer_name', 'customer_data', 'is_placed',
-            'items', 'products',
+            'items', 'products', 'discounts',
             'subtotal', 'total', 'created', 'updated')
     )
 
@@ -84,6 +87,22 @@ class CartViewset(Mixin, viewsets.ModelViewSet):
 
         return self.retrieve(request, *args, ** kwargs)
 
+    @action(methods=['post'], detail=True, url_path=r'discount')
+    def add_discount(self, request, *args, ** kwargs):
+        ser = DiscountSerializer(data=request.data)
+        ser.is_valid(raise_exception=True)
+        ser.save(order=self.get_object())
+        return self.retrieve(request, *args, ** kwargs)
+
+    @action(methods=['delete'], detail=True, url_path=r'discount/(?P<discount_slug>[\w-]+)')
+    def delete_discount(self, request, *args, discount_slug=None, ** kwargs):
+        discount = self.get_object().discounts.filter(slug=discount_slug)
+        if not discount.exists():
+            raise serializers.ValidationError({'discount': 'Not found'})
+
+        discount.first().delete()
+        return self.retrieve(request, *args, ** kwargs)
+
     @action(methods=['post'], detail=True, url_path=r'products')
     def post_items(self, request, *args, ** kwargs):
         """ Add products to cart """
@@ -106,16 +125,8 @@ class CartViewset(Mixin, viewsets.ModelViewSet):
     def post_item(self, request, *args, product_slug: str = None, ** kwargs):
         """ Add product to cart """
 
-        self.add_item(self.get_object(), product_slug, request.data)
-
-        # size_slug = request.data.pop('size', None)
-
-        # qs = cart.items.filter(product__meta_slug=product_slug, size__slug=size_slug)
-        # if not qs.exists():
-        #     add_item_to_cart(
-        #         cart, product_slug, size_slug,
-        #         quantity=request.data.pop('quantity', 1),
-        #     )
+        cart = self.get_object()
+        self.add_item(cart, product_slug, request.data)
 
         return self.retrieve(request, *args, **kwargs)
 
@@ -129,8 +140,8 @@ class CartViewset(Mixin, viewsets.ModelViewSet):
                 quantity=request_data.pop('quantity', 1),
             )
 
-    @action(methods=['post', 'patch', 'delete'], detail=True, url_path=r'item/(?P<item_slug>[\w-]+)')
-    def item(self, request, *args, item_slug: str = None, **kwargs):
+    @action(methods=['delete'], detail=True, url_path=r'item/(?P<item_slug>[\w-]+)')
+    def delete_item(self, request, *args, item_slug: str = None, **kwargs):
         order = self.get_object()
 
         item = order.items.filter(slug=item_slug)
@@ -141,25 +152,6 @@ class CartViewset(Mixin, viewsets.ModelViewSet):
         if request.method == 'DELETE':
             item.delete()
             return self.retrieve(request, *args, **kwargs)
-
-        # product = Product.objects.published().filter(slug=product_slug)
-        # if not product.exists():
-        #     raise serializers.ValidationError({'product': 'Not found'})
-
-        # product = product.first()
-        # size = product.sizes.filter(slug=request.data.get('size'))
-        # if not size.exists():
-        #     raise serializers.ValidationError({'size': 'Size required'})
-
-        # size = size.first()
-
-        # if request.method == 'POST':
-        #     add_item_to_cart(order, product_slug, request.data.get('size'))
-        #     return self.retrieve(request, *args, **kwargs)
-
-        # item.size = size
-        # item.quantity = request.data.get('qty', 1)
-        # item.save()
 
         return self.retrieve(request, *args, **kwargs)
 
@@ -175,7 +167,7 @@ class CartViewset(Mixin, viewsets.ModelViewSet):
         serializer.save(added_by=self.request.user)
 
 
-class OrderViewset(CartViewset):
+class OrderViewset(CartViewsMixin, viewsets.ModelViewSet):
     queryset = Order.objects.all()
     serializer_class = OrderSerializer
 

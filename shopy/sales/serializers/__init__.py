@@ -7,7 +7,7 @@ from ...store.utils import price_to_dict
 from ...store.models import Product, ProductSize
 from ...store.serializers import ProductSizeSerializer, get_product_serializer_class
 
-from ..models import Customer, Order, Cart, OrderItem
+from ..models import Customer, Order, Cart, OrderItem, Discount
 
 
 """
@@ -68,6 +68,23 @@ def get_customer_serializer_class(*, extra_fields=(), extra_read_only_fields=())
 
 
 """
+DISCOUNT
+"""
+
+
+class DiscountSerializer(serializers.ModelSerializer):
+    class Meta():
+        model = Discount
+        read_only_fields = ('slug', 'amt_data',)
+        fields = ('amt', 'description', * read_only_fields)
+
+    amt_data = serializers.SerializerMethodField(read_only=True)
+
+    def get_amt_data(self, obj):
+        return price_to_dict(obj.amt)
+
+
+"""
 ORDERITEM
 """
 
@@ -109,9 +126,7 @@ class CartSerializerMixin:
         return price_to_dict(obj.get_subtotal())
 
     def get_total(self, obj):
-        if not obj.total:
-            return None
-        return price_to_dict(obj.total)
+        return price_to_dict(obj.get_total())
 
 
 class CartSerializer(CartSerializerMixin, serializers.ModelSerializer):
@@ -156,6 +171,9 @@ def get_cart_serializer_class(*, request=None, extra_fields=(), extra_read_only_
     if 'customer_data' in read_only_fields:
         props['customer_data'] = CustomerSerializer(read_only=True, source='customer')
 
+    if 'discounts' in read_only_fields:
+        props['discounts'] = DiscountSerializer(read_only=True, many=True)
+
     if 'products' in fields or 'products' in read_only_fields:
         props['products'] = serializers.SlugRelatedField(
             slug_field="meta_slug", queryset=Product.objects.published(), many=True, required=False)
@@ -170,7 +188,7 @@ ORDER
 """
 
 
-def get_order_serializer_class(*, request=None, extra_fields=(), extra_read_only_fields=()):
+def get_order_serializer_class(*, request=None, extra_fields=(), extra_read_only_fields=(), customer_serializer=None, item_serializer=None):
     read_only_fields = ('slug', 'customer_name', 'subtotal', 'total', *extra_read_only_fields)
     fields = (*read_only_fields, *extra_fields)
 
@@ -186,10 +204,17 @@ def get_order_serializer_class(*, request=None, extra_fields=(), extra_read_only
     }
 
     if 'customer_data' in read_only_fields:
-        props['customer_data'] = CustomerSerializer(read_only=True, source='customer')
+        if not customer_serializer:
+            customer_serializer = CustomerSerializer
+        props['customer_data'] = customer_serializer(read_only=True, source='customer')
 
     if 'items' in read_only_fields:
-        props['items'] = OrderItemSerializer(read_only=True, many=True)
+        # if not item_serializer:
+        item_serializer = OrderItemSerializer
+        props['items'] = item_serializer(read_only=True, many=True)
+
+    if 'discounts' in read_only_fields:
+        props['discounts'] = DiscountSerializer(read_only=True, many=True)
 
     return type('OrderSerializer', (CartSerializerMixin, serializers.ModelSerializer), props)
 
@@ -197,6 +222,7 @@ def get_order_serializer_class(*, request=None, extra_fields=(), extra_read_only
 OrderSerializer = get_order_serializer_class(
     extra_fields=('is_delivered',),
     extra_read_only_fields=(
-        'transaction_id', 'customer_data', 'items',
-        'items_count', 'dt_delivered', 'created', 'updated')
+        'transaction_id', 'customer_data', 'items', 'discounts',
+        'items_count', 'dt_delivered', 'created', 'updated'),
+    customer_serializer=get_customer_serializer_class(extra_read_only_fields=('email', 'phone'))
 )

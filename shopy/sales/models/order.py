@@ -24,6 +24,27 @@ def get_transaction_id(instance):
     return hashlib.shake_128(bytes(f'{instance.slug}', encoding='utf-8')).hexdigest(4)
 
 
+class Discount(BaseModelMixin):
+    # currency
+    order = models.ForeignKey(f'{__app_name__}.Order', on_delete=models.CASCADE, related_name='discounts',)
+
+    description = models.TextField()
+    amt = models.DecimalField(verbose_name=_("amount"), max_digits=10, decimal_places=2)
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+
+        # self.order.update_total(save=True)
+
+    def __str__(self) -> str:
+        return f'-{self.value}'
+
+    class Meta:
+        ordering = ('-created',)
+        verbose_name = _('Discount')
+        verbose_name_plural = _('Discounts')
+
+
 class Order(BaseModelMixin):
     customer = models.ForeignKey(
         f'{__app_name__}.Customer',
@@ -92,6 +113,20 @@ class Order(BaseModelMixin):
         self.save()
         logger.info(f'Order[{self.id}] delivered')
 
+    def update_total(self, save=False):
+        assert self.is_delivered is False, 'Order is already delivered'
+
+        self.total = self.get_total()
+        if save is True:
+            self.save()
+
+    def get_total(self):
+        return self.get_subtotal() - self.get_discounts()
+
+    def get_discounts(self):
+        return self.discounts.all().aggregate(models.Sum('amt'))['amt__sum'] or Decimal(0)
+        return sum(item.amt for item in self.discounts.all())
+
     def get_subtotal(self):
         return sum(item.get_subtotal() for item in self.items.all())
 
@@ -148,6 +183,9 @@ class Cart(Order):
         # self.items.update(size__quantity=models.F('size__quantity') - models.F('quantity'))
 
         self.is_paid = True
+        #
+        # self.total = self.get_total()
+        #
         self.transaction_id = get_transaction_id(self)
         self.save()
         logger.info(f'Cart[{self.id}] paid')
@@ -165,18 +203,14 @@ class Cart(Order):
             logger.info(f'Cart[{self.id}]: Already placed')
             return self
 
-        self.total = self.get_subtotal()
         self.is_placed = True
-        self.save()
+        self.update_total(save=True)
+
         logger.info(f'Cart[{self.id}] placed')
         return self
 
 
 class OrderItem(BaseModelMixin):
-    class Meta:
-        ordering = ('-created',)
-        verbose_name = _('Order Item')
-        verbose_name_plural = _('Order Items')
 
     order = models.ForeignKey(
         f'{__app_name__}.Order', related_name='items',
@@ -205,11 +239,16 @@ class OrderItem(BaseModelMixin):
 
     # for anything else, add a json field
 
-    def __str__(self):
-        return f'{self.product}'
-
     def get_subtotal(self):
         return self.get_price() * self.quantity
 
     def get_price(self) -> 'Decimal':
         return self.price or self.product.get_price()
+
+    def __str__(self):
+        return f'{self.product}'
+
+    class Meta:
+        ordering = ('-created',)
+        verbose_name = _('Order Item')
+        verbose_name_plural = _('Order Items')
