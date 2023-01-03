@@ -54,12 +54,19 @@ class StaffSalesIndexView(IndexView):
         top_selling = items.filter(order__is_paid=True).values('product__slug').annotate(
             total=models.Count('product__slug')).order_by('-total')[:10]
 
+        total_by_month = {
+            f'{value[0]}': {'total': value[1], 'month': f'{value[0]}'} for value in orders.total_by_month().values_list('month', 'total')
+        }
+        for value in orders.count_by_month().values_list('month', 'count'):
+            total_by_month[f'{value[0]}']['count'] = value[1]
+
         data.update({
             'total': price_to_dict(orders.total()),
             'supplier_total': price_to_dict(supplier_orders.total(), currency='USD'),
             'orders_count': orders.count(),
             'carts_count': carts.count(),
             'placed_count': placed.count(),
+            'total_by_month': total_by_month,
 
             'customers_count': customers.count(),
             'top_customers': get_customer_serializer_class(extra_read_only_fields=('orders_count',)).many_init(customers.by_amount_spent().order_by('-spent', )[:10]).data,

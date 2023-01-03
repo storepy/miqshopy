@@ -31,11 +31,6 @@ class Discount(BaseModelMixin):
     description = models.TextField()
     amt = models.DecimalField(verbose_name=_("amount"), max_digits=10, decimal_places=2)
 
-    def save(self, *args, **kwargs):
-        super().save(*args, **kwargs)
-
-        # self.order.update_total(save=True)
-
     def __str__(self) -> str:
         return f'-{self.value}'
 
@@ -113,13 +108,6 @@ class Order(BaseModelMixin):
         self.save()
         logger.info(f'Order[{self.id}] delivered')
 
-    def update_total(self, save=False):
-        assert self.is_delivered is False, 'Order is already delivered'
-
-        self.total = self.get_total()
-        if save is True:
-            self.save()
-
     def get_total(self):
         return self.get_subtotal() - self.get_discounts()
 
@@ -184,7 +172,7 @@ class Cart(Order):
 
         self.is_paid = True
         #
-        # self.total = self.get_total()
+        self.total = self.get_total()
         #
         self.transaction_id = get_transaction_id(self)
         self.save()
@@ -204,7 +192,6 @@ class Cart(Order):
             return self
 
         self.is_placed = True
-        self.update_total(save=True)
 
         logger.info(f'Cart[{self.id}] placed')
         return self

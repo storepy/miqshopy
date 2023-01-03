@@ -1,4 +1,4 @@
-
+from decimal import Decimal
 from django.http import JsonResponse
 
 from rest_framework.decorators import action
@@ -89,9 +89,15 @@ class CartViewset(CartViewsMixin, viewsets.ModelViewSet):
 
     @action(methods=['post'], detail=True, url_path=r'discount')
     def add_discount(self, request, *args, ** kwargs):
+
         ser = DiscountSerializer(data=request.data)
         ser.is_valid(raise_exception=True)
-        ser.save(order=self.get_object())
+
+        cart = self.get_object()
+        if Decimal(request.data.get('amt')) > cart.get_subtotal():
+            raise serializers.ValidationError({'amt': 'Invalid amount'})
+
+        ser.save(order=cart)
         return self.retrieve(request, *args, ** kwargs)
 
     @action(methods=['delete'], detail=True, url_path=r'discount/(?P<discount_slug>[\w-]+)')

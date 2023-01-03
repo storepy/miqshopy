@@ -41,6 +41,16 @@ class CustomerManager(models.Manager):
 #
 
 class OrderQuerySet(models.QuerySet):
+    def count_by_month(self):
+        return self.annotate(month=models.functions.TruncMonth('created'))\
+            .values('month')\
+            .annotate(count=models.Count('id')).order_by('month')
+
+    def total_by_month(self):
+        return self.annotate(month=models.functions.TruncMonth('created'))\
+            .values('month')\
+            .annotate(total=models.Sum('total')).order_by('month')
+
     def total(self):
         return self.aggregate(total=models.Sum('total'))['total']
 
