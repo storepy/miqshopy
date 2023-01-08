@@ -1,13 +1,15 @@
 
+
 from django.shortcuts import get_object_or_404
 from django.contrib.sites.shortcuts import get_current_site
+
 
 from miq.core.models import Currencies
 from miq.core.serializers import serialize_context_pagination
 from miq.staff.views.generic import ListView
 
-from ..utils import get_category_options
 from ..viewsets.product import get_product_qs
+from ..utils import get_category_options, get_product_size_choices
 from ..serializers import ShopSettingSerializer, ProductSerializer, ProductListSerializer
 from ..models import Product, ShopSetting, SupplierChoices, ProductStages
 
@@ -15,7 +17,9 @@ from ..models import Product, ShopSetting, SupplierChoices, ProductStages
 def get_base_context_data(request):
     data = {
         'currencies': Currencies, 'suppliers': SupplierChoices, 'stages': ProductStages,
-        'categories': get_category_options()
+        # TODO: cache categories
+        'categories': get_category_options(),
+        'sizes': get_product_size_choices(),
     }
 
     if (setting := ShopSetting.objects.filter(site=get_current_site(request))) and setting.exists():

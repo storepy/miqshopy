@@ -2,12 +2,35 @@
 import re
 import logging
 
+from django.db import models
+from django.utils.text import capfirst
+
 from ..utils import get_currency
-from .models import Category
+from .models import Category, ProductSize
 
 logger = logging.getLogger(__name__)
 
 # https://www.facebook.com/business/help/120325381656392?id=725943027795860
+
+cache = {
+    'sizes': [],
+    'categories': []
+}
+
+
+def get_product_sizes_qs(category_code: str = None):
+    qs = ProductSize.objects.values('code')
+    # if category_code:
+    # qs = qs.filter(product__category__code=category_code.lower())
+    return qs.annotate(count=models.Count('code')).order_by('-count').values_list('code', flat=True)
+
+
+def get_product_size_choices(*, force_update=False):
+    size_choices = cache['sizes']
+    if not size_choices or force_update is True:
+        print('==> Updating size choices')
+        cache['sizes'] = [capfirst(i) for i in get_product_sizes_qs()]
+    return size_choices
 
 
 def get_category_options(top: bool = False, exclude: list = None) -> dict:

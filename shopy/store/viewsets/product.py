@@ -16,9 +16,9 @@ from rest_framework.permissions import IsAdminUser
 from miq.core.middleware import local
 from miq.core.permissions import DjangoModelPermissions
 
-from ..utils import get_category_options
 from ..models import Product, ProductAttribute, ProductStages
 from ..serializers import ProductSerializer, ProductListSerializer
+from ..utils import get_category_options, get_product_size_choices
 from ..serializers import ProductAttributeSerializer, ProductSizeSerializer
 
 from .mixins import ViewSetMixin
@@ -68,6 +68,12 @@ def get_product_qs(request, *, qs=None, params=None):
             qs = qs.filter(is_explicit=True)
         if published == 'exclude':
             qs = qs.draft()
+
+    if(size := params.get('size')):
+        if size == 'nosize':
+            qs = qs.has_no_sizes()
+        else:
+            qs = qs.filter(sizes__code=size.lower())
 
     if(atc := params.get('atc')) and atc == '1':
         qs = qs.to_cart()
@@ -159,8 +165,9 @@ class ProductViewset(ViewSetMixin, viewsets.ModelViewSet):
                 log.error(f'Creating size for product[{product.slug}]: {e}')
                 raise serializers.ValidationError(
                     {'code': _('This size already exists')})
+
+            get_product_size_choices(force_update=True)
             return self.retrieve(request, *args, **kwargs)
-            # return self.retrieve(self, request, *args, **kwargs)
 
         if not size_slug:
             raise serializers.ValidationError({'size_slug': _('Size slug required')})
@@ -183,6 +190,7 @@ class ProductViewset(ViewSetMixin, viewsets.ModelViewSet):
         if request.method == 'DELETE':
             size.delete()
 
+        get_product_size_choices(force_update=True)
         return self.retrieve(self, request, *args, **kwargs)
 
     @action(methods=['post', 'patch', 'delete'], detail=True, url_path=r'attribute/(?P<attr_slug>[\w-]+)')
