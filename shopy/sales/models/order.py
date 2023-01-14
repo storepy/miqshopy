@@ -192,6 +192,7 @@ class Cart(Order):
             return self
 
         self.is_placed = True
+        self.save()
 
         logger.info(f'Cart[{self.id}] placed')
         return self

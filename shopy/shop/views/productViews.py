@@ -14,9 +14,8 @@ from miq.core.views.generic import ListView, DetailView
 from miq.analytics.utils import get_hit_data
 from miq.core.serializers import serialize_context_pagination
 
-from ...store.models import Product, ProductHit, CategoryHit
-from ...sales.models import Customer
 from ...sales.api import APIProductSerializer
+from ...store.models import Product, ProductHit
 
 from ..serializers import category_to_dict, get_category_url
 from ..utils import product_to_jsonld, get_published_categories
@@ -57,9 +56,9 @@ class ProductView(ViewMixin, DetailView):
             response = redirect(self.get_object().get_whatsapp_link(num, request))
 
         try:
-            create_product_hit(request, response)
-        except Exception:
-            pass
+            create_product_hit(request, response, self.object or self.get_object())
+        except Exception as e:
+            print('----------------------.hit', 'error', e)
 
         return response
 

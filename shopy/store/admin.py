@@ -1,7 +1,7 @@
 from django.contrib import admin
 
 from .models import (
-    Product, ProductImage,
+    Product, ProductImage, ProductHit,
     Category, SupplierOrder, SupplierItem
 )
 
@@ -16,3 +16,4 @@ class ProductAdmin(admin.ModelAdmin):
 
 admin.site.register(SupplierItem)
 admin.site.register(SupplierOrder)
+admin.site.register(ProductHit)

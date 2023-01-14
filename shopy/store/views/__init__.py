@@ -1,29 +1,14 @@
-
-
-# from django.db.models.functions import Cast
-# from django.db.models import Count, CharField
-# import requests
-# from pprint import pprint
-from miq.analytics.models import Bot
-# from miq.analytics.models import  Hit
 from django.db import models
-from ..models import ProductHit
 from django.contrib.sites.shortcuts import get_current_site
-# from django.http import JsonResponse
 
-# from rest_framework import serializers
-# from rest_framework.response import Response
-# from rest_framework.decorators import api_view
-
-
+from miq.analytics.models import Bot
 from miq.staff.views import IndexView
 from miq.core.models import Currencies
 
-# from miq.analytics.models import Hit
-# from miq.analytics.serializers import HitSerializer
 
-from ..serializers import ShopSettingSerializer, get_product_serializer_class, get_category_serializer_class
+from ..models import ProductHit
 from ..models import Product, Category, SupplierOrder, ShopSetting, SupplierChoices, ProductStages
+from ..serializers import ShopSettingSerializer, get_product_serializer_class, get_category_serializer_class
 
 from .v_product import StaffProductsView, StaffProductView
 from .v_category import StaffCategoryView
@@ -117,21 +102,3 @@ class ShopStaffIndexView(IndexView):
         if has_issues:
             data['issues'] = issues
             data['has_issues'] = has_issues
-
-
-# qs = Hit.objects.all()
-# # qs = qs.filter(parsed_data__from_ref__icontains='facebook.com')
-# qs = qs.filter(parsed_data__from_ref__isnull=False)
-# qs = qs.values('parsed_data__from_ref').annotate(c=models.Count('parsed_data__from_ref')).order_by('-c')
-
-# # pprint(list(qs[:16]))
-
-
-# v = ProductHit.objects.first()
-# v = Bot.objects.all()[11]
-# ip = v.ip
-
-# # r = requests.get(f'https://ipapi.co/{ip}/json/').json()
-
-# print(ip)
-# # pprint(r)
