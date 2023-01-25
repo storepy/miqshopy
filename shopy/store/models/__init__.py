@@ -5,15 +5,15 @@
 
 from .m_category import Category  # noqa
 
-from .productSizeAttrModels import ProductAttribute, ProductSize
-from .productModel import Product, ProductStage, ProductStages
+from .m_product_size_attr import ProductAttribute, ProductSize
+from .m_product import Product, ProductStage, ProductStages
 
-from .proxyModels import ProductImage, ProductPage, CategoryPage
+from .m_proxy import ProductImage, ProductPage, CategoryPage
 
-from .settingModel import ShopSetting
+from .m_setting import ShopSetting
 
-from .supplierModels import SupplierOrder, SupplierItem, SUPPLIER_MAP
-from .supplierModels import SupplierChoice, SupplierChoices
+from .m_supplier import SupplierOrder, SupplierItem, SUPPLIER_MAP
+from .m_supplier import SupplierChoice, SupplierChoices
 
-from .analyticsModels import ShopHit
-from .analyticsModels import ProductHit, CategoryHit
+from .m_analytics import ShopHit
+from .m_analytics import ProductHit, CategoryHit

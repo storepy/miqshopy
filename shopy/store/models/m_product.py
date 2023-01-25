@@ -16,7 +16,7 @@ from miq.core.utils import get_text_choices, truncate_str
 
 # from miq.core.middleware import local
 
-from .supplierModels import SupplierChoice
+from .m_supplier import SupplierChoice
 from .managers import ProductManager
 
 app_name = 'store'

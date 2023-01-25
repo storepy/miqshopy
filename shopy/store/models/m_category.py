@@ -57,7 +57,7 @@ class Category(BaseModelMixin):
     objects = CategoryManager()
 
     def get_products(self):
-        from .productModel import Product
+        from .m_product import Product
         return Product.objects.filter(
             models.Q(category=self)
             | models.Q(category__in=self.children.all())
