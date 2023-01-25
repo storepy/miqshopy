@@ -16,6 +16,7 @@ from rest_framework.permissions import IsAdminUser
 from miq.core.middleware import local
 from miq.core.permissions import DjangoModelPermissions
 
+from ..services import product_list_qs, ProductListFilterSerializer
 from ..models import Product, ProductAttribute, ProductStages
 from ..serializers import ProductSerializer, ProductListSerializer
 from ..utils import get_category_options, get_product_size_choices
@@ -24,61 +25,6 @@ from ..serializers import ProductAttributeSerializer, ProductSizeSerializer
 from .mixins import ViewSetMixin
 
 log = logging.getLogger(__name__)
-
-
-def get_product_qs(request, *, qs=None, params=None):
-    assert request is not None
-    if qs is None:
-        qs = Product.objects.all()
-
-    params = params or getattr(request, 'query_params', {}) or {}
-
-    if(order_slug := params.get('supplier_order_slug')):
-        if order_slug == '':
-            return qs.none()
-        qs = qs.filter(supplier_orders__slug=order_slug)
-
-    if(q := params.get('q')) and q != '':
-        qs = qs.search_by_query(q)
-
-    if(cat := params.get('cat')) and cat != '':
-        if cat == 'no-cat':
-            qs = qs.has_no_category()
-        else:
-            qs = qs.filter(category__slug=cat)
-
-    if(presale := params.get('presale')) and presale != '':
-        qs = qs.filter(is_pre_sale=True)
-    if(sale := params.get('sale')) and sale != '':
-        qs = qs.filter(is_on_sale=True)
-    if params.get('__oos'):
-        qs = qs.filter(is_oos=True)
-
-    if params.get('__no_des'):
-        qs = qs.has_no_description()
-    if params.get('__no_size'):
-        qs = qs.has_no_sizes()
-
-    if(published := params.get('published')) and published != '':
-        if published == 'include':
-            qs = qs.published()
-        if published == 'pinned':
-            qs = qs.filter(is_pinned=True)
-        if published == 'explicit':
-            qs = qs.filter(is_explicit=True)
-        if published == 'exclude':
-            qs = qs.draft()
-
-    if(size := params.get('size')):
-        if size == 'nosize':
-            qs = qs.has_no_sizes()
-        else:
-            qs = qs.filter(sizes__code=size.lower())
-
-    if(atc := params.get('atc')) and atc == '1':
-        qs = qs.to_cart()
-
-    return qs.order_by('position', '-created', 'name')
 
 
 class ProductViewset(ViewSetMixin, viewsets.ModelViewSet):
@@ -237,18 +183,14 @@ class ProductViewset(ViewSetMixin, viewsets.ModelViewSet):
         return ProductSerializer
 
     def get_queryset(self):
-        return get_product_qs(self.request, qs=super().get_queryset())
+        filters = ProductListFilterSerializer(data=self.request.query_params)
+        filters.is_valid(raise_exception=True)
+        return product_list_qs(filters=filters.validated_data).order_by('position', '-created', 'name')
 
     def list(self, request, *args, **kwargs):
         r = super().list(request, *args, **kwargs)
         r.data['categories'] = get_category_options()
         r.data['stages'] = ProductStages
-        return r
-
-    def retrieve(self, *args, **kwargs):
-        r = super().retrieve(*args, **kwargs)
-        # r.data['stages'] = ProductStages
-        # r.data['categories'] = self.get_category_options()
         return r
 
     def perform_create(self, ser):
