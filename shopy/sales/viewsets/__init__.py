@@ -1,3 +1,4 @@
+import logging
 from decimal import Decimal
 from django.http import JsonResponse
 
@@ -9,40 +10,55 @@ from rest_framework.permissions import IsAdminUser
 from miq.staff.mixins import LoginRequiredMixin
 from miq.core.permissions import DjangoModelPermissions
 
-from ..api import add_item_to_cart
-from ..models import Cart, Order, Customer
+
+from ..models import Cart, Order
+from ..services import cart_add_item, cart_delete_item
+from ..services import customer_qs, customer_delete, customer_create_by_staff, CustomerFilterSerializer
 from ..serializers import OrderSerializer, CustomerSerializer, get_cart_serializer_class, DiscountSerializer
+
+log = logging.getLogger(__name__)
 
 
 class Mixin(LoginRequiredMixin):
-    lookup_field = 'slug'
+    lookup_field: str = 'slug'
     parser_classes = (JSONParser, )
     permission_classes = (IsAdminUser, DjangoModelPermissions)
 
 
 class CustomerViewset(Mixin, viewsets.ModelViewSet):
-    queryset = Customer.objects.all()
+    queryset = customer_qs().none()
     serializer_class = CustomerSerializer
 
-    def destroy(self, request, *args, **kwargs):
-        if self.get_object().orders.exists():
-            raise serializers.ValidationError({'customer': 'Can not delete customer'})
-        return super().destroy(request, *args, **kwargs)
-
     def get_queryset(self):
-        qs = super().get_queryset()
-        params = self.request.query_params
+        filters = CustomerFilterSerializer(data=self.request.query_params)
+        filters.is_valid(raise_exception=True)
 
-        q = params.get('q')
+        data = filters.validated_data
+        q = data.pop('q', '')
+        qs = customer_qs(filters=data)
         if q:
-            if (len(q) < 3):
+            if len(q) < 3:
                 return qs.none()
             qs = qs.find(q)
 
         return qs
 
     def perform_create(self, serializer):
-        serializer.save(added_by=self.request.user)
+        user = self.request.user
+        try:
+            serializer.instance = customer_create_by_staff(
+                data=serializer.validated_data, creator=user, request=self.request
+            )
+        except Exception as e:
+            log.error(f'[{self.request.user.pk}]: User cannot create customer: {e}')
+            raise serializers.ValidationError({'customer': 'Can not create customer'})
+
+    def perform_destroy(self, instance):
+        try:
+            customer_delete(instance=instance)
+        except Exception as e:
+            log.error(f'[{instance.id}] {e}')
+            raise serializers.ValidationError({'customer': 'Can not delete customer'})
 
 
 class CartViewsMixin(Mixin):
@@ -111,54 +127,32 @@ class CartViewset(CartViewsMixin, viewsets.ModelViewSet):
 
     @action(methods=['post'], detail=True, url_path=r'products')
     def post_items(self, request, *args, ** kwargs):
+        # raise serializers.ValidationError({'data': 'invalid-01'})
         """ Add products to cart """
-
         r_data = request.data
         if not (isinstance(r_data, list)):
-            raise serializers.ValidationError({'data': 'invalid1'})
+            raise serializers.ValidationError({'data': 'Invalid data'})
 
         cart = self.get_object()
         for data in r_data:
             product_slug = data.pop('product_slug', None)
             if not product_slug:
-                raise serializers.ValidationError({'data': 'invalid2'})
+                raise serializers.ValidationError({'data': 'Product slug is required'})
 
-            self.add_item(cart, product_slug, data)
+            cart_add_item(cart, data={**data, 'product': product_slug})
 
         return self.retrieve(request, *args, **kwargs)
 
     @action(methods=['post'], detail=True, url_path=r'product/(?P<product_slug>[\w-]+)')
     def post_item(self, request, *args, product_slug: str = None, ** kwargs):
         """ Add product to cart """
-
-        cart = self.get_object()
-        self.add_item(cart, product_slug, request.data)
-
+        cart_add_item(self.get_object(), data={**request.data, 'product': product_slug})
         return self.retrieve(request, *args, **kwargs)
-
-    def add_item(self, cart, product_slug, request_data):
-        size_slug = request_data.pop('size', None)
-
-        qs = cart.items.filter(product__meta_slug=product_slug, size__slug=size_slug)
-        if not qs.exists():
-            add_item_to_cart(
-                cart, product_slug, size_slug,
-                quantity=request_data.pop('quantity', 1),
-            )
 
     @action(methods=['delete'], detail=True, url_path=r'item/(?P<item_slug>[\w-]+)')
     def delete_item(self, request, *args, item_slug: str = None, **kwargs):
-        order = self.get_object()
-
-        item = order.items.filter(slug=item_slug)
-        if not item.exists():
-            raise serializers.ValidationError({'item': 'Not found'})
-
-        item = item.first()
-        if request.method == 'DELETE':
-            item.delete()
-            return self.retrieve(request, *args, **kwargs)
-
+        """ Delete item from cart """
+        cart_delete_item(self.get_object(), item_slug=item_slug)
         return self.retrieve(request, *args, **kwargs)
 
     def get_serializer_class(self):

@@ -27,9 +27,6 @@ class AbstractHit(BaseModelMixin):
 
     count = models.PositiveIntegerField(default=1)
 
-    #
-    # is_bot = models.BooleanField(_('Is bot'), default=False)
-
     class Meta:
         abstract = True
 

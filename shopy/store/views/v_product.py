@@ -6,7 +6,7 @@ from django.contrib.sites.shortcuts import get_current_site
 
 from miq.core.models import Currencies
 from miq.core.serializers import serialize_context_pagination
-from miq.staff.views.generic import ListView
+from miq.staff.views.generic import ListView,TemplateView
 
 from ..services import product_list_qs, ProductListFilterSerializer
 from ..utils import get_category_options, get_product_size_choices
@@ -25,6 +25,17 @@ def get_base_context_data(request):
     if (setting := ShopSetting.objects.filter(site=get_current_site(request))) and setting.exists():
         data['shopy_settings'] = ShopSettingSerializer(setting.first()).data
     return data
+
+
+class StaffProductCreateView(TemplateView):
+    template_name = 'store/base.django.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        self.update_sharedData(context, {
+            **get_base_context_data(self.request),
+        })
+        return context
 
 
 class StaffProductView(ListView):

@@ -40,11 +40,13 @@ const getSheinOrderProductLinks = () => {
 """
 
 
-order_slug = '03ec7a72-3629-4c74-b4bc-6c077e8ccae6'  # local
+order_slug = 'e500852e-1070-40a1-b2fa-a0477bde9608'  # local
 # order_slug = ''
 
 
-p_ = []
+p_ = [
+    'https://us.shein.com/Ruffle-Hem-Open-Front-Cardigan-p-11806078-cat-2219.html?scici=productDetail~~RecommendList~~RS_own,RJ_NoFaultTolerant~~Customers%20Also%20Viewed~~SPcProductDetailCustomersAlsoViewedList~~0&mallCode=1'
+]
 count = len(set(p_))
 
 headers = {**baseheaders}
@@ -92,6 +94,7 @@ for link in set(p_):
     except Exception as e:
         print('Error in post', link)
         print(e)
+        errors.append(link)
 
     if len(p_) > 1:
         time.sleep(random.randint(1, 5))

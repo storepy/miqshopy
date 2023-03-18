@@ -20,9 +20,8 @@ def get_base_context_data(request):
 
 class StaffCategoryView(DetailView):
     model = Category
-    template_name = 'store/base.django.html'
     slug_field = 'slug'
-    paginate_by = 16
+    template_name = 'store/base.django.html'
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)

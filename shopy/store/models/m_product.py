@@ -89,10 +89,10 @@ class Product(BaseModelMixin):
     """
     IMAGES
     """
-
+ 
     cover = models.OneToOneField(
         f'{app_name}.ProductImage',
-        verbose_name=_("Cover"), on_delete=models.SET_NULL, blank=True, null=True
+        verbose_name=_("Cover"), on_delete=models.PROTECT, blank=True, null=True
     )
 
     # TODO: Limit to 10

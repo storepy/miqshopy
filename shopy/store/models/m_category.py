@@ -80,12 +80,6 @@ class Category(BaseModelMixin):
 
         if self.is_published and not self.dt_published:
             self.dt_published = timezone.now()
-            logger.info(f'[{self.name}]: Added dt published')
-
-        if not self.pk and (not self.position or self._meta.model.objects.filter(position=self.position).exists()):
-            position = self._meta.model.objects.count() + 1
-            logger.info(f'[{self.name}]: Position[{self.position}] taken. Updatin to [{position}]')
-            self.position = position
 
         super().save(*args, **kwargs)
 
@@ -94,22 +88,20 @@ class Category(BaseModelMixin):
         assert self.meta_title, 'Category must have a meta title'
 
         if self.is_published:
-            logger.info(f'[{self.name}]: Already published')
+            logger.warning(f'[{self.name}]: Category already published')
             return
 
         self.is_published = True
         self.dt_published = timezone.now()
         self.save()
-        logger.info(f'[{self.name}]: Published')
 
     def unpublish(self,):
         if not self.is_published:
-            logger.error(f'[{self.name}]: Not published')
+            logger.warning(f'[{self.name}]: Category not published')
             return
 
         self.is_published = False
         self.save()
-        logger.info(f'[{self.name}]: Unpublished')
 
     def get_is_public(self):
         return self.meta_slug and self.is_published

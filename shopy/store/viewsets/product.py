@@ -6,6 +6,7 @@ from django.utils.text import slugify
 from django.utils.translation import gettext_lazy as _
 from django.contrib.sites.shortcuts import get_current_site
 
+from rest_framework.response import Response
 from rest_framework.decorators import action
 from rest_framework.parsers import JSONParser
 from rest_framework import viewsets, serializers
@@ -16,7 +17,7 @@ from rest_framework.permissions import IsAdminUser
 from miq.core.middleware import local
 from miq.core.permissions import DjangoModelPermissions
 
-from ..services import product_list_qs, ProductListFilterSerializer
+from ..services import product_list_qs, ProductListFilterSerializer, product_delete
 from ..models import Product, ProductAttribute, ProductStages
 from ..serializers import ProductSerializer, ProductListSerializer
 from ..utils import get_category_options, get_product_size_choices
@@ -202,3 +203,6 @@ class ProductViewset(ViewSetMixin, viewsets.ModelViewSet):
             local.site = get_current_site(request)
 
         return super().dispatch(request, *args, **kwargs)
+
+    def perform_destroy(self, instance):
+        product_delete(instance)

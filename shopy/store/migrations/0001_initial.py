@@ -4,8 +4,9 @@ from decimal import Decimal
 import django.core.validators
 from django.db import migrations, models
 import django.db.models.deletion
-import models.m_setting
 import uuid
+
+import shopy.store.models.m_setting
 
 
 class Migration(migrations.Migration):

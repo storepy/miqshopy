@@ -6,7 +6,9 @@ from django.db import models
 from django.utils.text import capfirst
 
 from ..utils import get_currency
-from .models import Category, ProductSize
+
+from .models import ProductSize
+
 
 logger = logging.getLogger(__name__)
 
@@ -33,21 +35,25 @@ def get_product_size_choices(*, force_update=False):
     return size_choices
 
 
-def get_category_options(top: bool = False, exclude: list = None) -> dict:
-    cats = Category.objects.all()
+def get_category_options(top: bool = False, exclude: list[str] = None) -> dict:
+    from .services import category_list_qs, category_list_parent_qs
+
     if top:
-        cats = cats.filter(parent__isnull=True)
+        qs = category_list_parent_qs()
+    else:
+        qs = category_list_qs()
+
     if isinstance(exclude, list):
-        cats = cats.exclude(slug__in=exclude)
+        qs = qs.exclude(slug__in=exclude)
 
     return {
-        'count': cats.count(),
+        'count': qs.count(),
         'items': [
             {
                 'label': cat.name,
                 'slug': cat.slug,
                 'value': cat.slug
-            } for cat in cats
+            } for cat in qs
         ]
     }
 

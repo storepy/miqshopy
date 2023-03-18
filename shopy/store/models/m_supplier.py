@@ -132,6 +132,8 @@ class SupplierItem(BaseModelMixin):
     order = models.ForeignKey(
         f'{app_name}.SupplierOrder', verbose_name=_("Order"),
         on_delete=models.CASCADE, related_name='items')
+
+    # maybe set ondelete to setnull
     product = models.ForeignKey(
         f'{app_name}.Product', verbose_name=_("Product"),
         on_delete=models.CASCADE, related_name='supplier_items')
