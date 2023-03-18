@@ -11,7 +11,6 @@ from django.utils.crypto import get_random_string
 from django.utils.translation import gettext_lazy as _
 
 from rest_framework.decorators import action
-from rest_framework.response import Response
 from rest_framework.parsers import JSONParser
 from rest_framework import viewsets, serializers
 from rest_framework.permissions import IsAdminUser
@@ -29,6 +28,10 @@ from ..crawler import Crawler
 from ..serializers import SupplierOrderSerializer
 from ..models import Product, ProductAttribute, ProductImage, ProductStages, Category
 from ..models import SupplierOrder, SupplierItem
+from ..services import (
+    supplier_order_mark_paid, supplier_order_delete, supplier_order_create, supplier_order_qs,
+    product_create,
+)
 
 from .mixins import ViewSetMixin
 
@@ -124,18 +127,23 @@ def add_shein_product_to_order(order, data, user=None, url=None):
     if qs.filter(supplier_item_id=goods_id).exists():
         product = qs.first()
     else:
-        slug = slugify(p_name)
-
-        if qs.filter(meta_slug=slug).exists():
-            slug += get_random_string(length=32)
-
-        product = qs.create(
-            supplier=order.supplier, name=p_name,
-            description=data.get('description', ''),
-            meta_title=p_name, meta_slug=slug,
-            supplier_item_id=goods_id,
-            retail_price=estimate_retail_price(data.get('cost', 0))
+        product = product_create(
+            name=p_name, description=data.get('description'),
+            retail_price=estimate_retail_price(data.get('cost', 0)),
+            supplier=order.supplier, supplier_item_id=goods_id,
         )
+        # slug = slugify(p_name)
+
+        # if qs.filter(meta_slug=slug).exists():
+        #     slug += get_random_string(length=32)
+
+        # product = qs.create(
+        # supplier=order.supplier, name=p_name,
+        # description=data.get('description', ''),
+        # meta_title=p_name, meta_slug=slug,
+        # supplier_item_id=goods_id,
+        # retail_price=estimate_retail_price(data.get('cost', 0))
+        # )
         add_product_attributes(product, data)
         add_product_images(product, data, user=user)
         product.save()
@@ -191,7 +199,7 @@ def add_plt_product_to_order(order, data, user=None, url=None):
 
 class SupplierOrderViewset(ViewSetMixin, viewsets.ModelViewSet):
     lookup_field = 'slug'
-    queryset = SupplierOrder.objects.all()
+    queryset = supplier_order_qs()
     serializer_class = SupplierOrderSerializer
     parser_classes = (JSONParser, )
     permission_classes = (IsAdminUser, DjangoModelPermissions)
@@ -301,7 +309,7 @@ class SupplierOrderViewset(ViewSetMixin, viewsets.ModelViewSet):
         return self.retrieve(request, *args, **kwargs)
 
     @action(methods=['post'], detail=True, url_path=r'shein')
-    def shein(self, request: 'http.HttpRequest', *args: tuple, **kwargs: dict) -> 'Response':
+    def shein(self, request, *args, **kwargs):
         url = request.data.get('url')  # type: str
         if not url:
             raise serializers.ValidationError({'url': _('url required')})
@@ -316,32 +324,6 @@ class SupplierOrderViewset(ViewSetMixin, viewsets.ModelViewSet):
             self.get_object(), p_data, url=url, user=self.request.user
         )
         return self.retrieve(request, *args, **kwargs)
-
-    @action(methods=['post'], detail=True, url_path=r'pay')
-    def mark_paid(self, request: 'http.HttpRequest', *args: tuple, **kwargs: dict) -> 'Response':
-        try:
-            self.get_object().mark_paid()
-        except Exception as e:
-            raise serializers.ValidationError({'order': str(e)})
-
-        return self.retrieve(request, *args, **kwargs)
-
-    def update(self, request, *args, **kwargs):
-        r = super().update(request, *args, **kwargs)
-        stage = request.data.get('stage')
-        if stage:
-            self.get_object().products.update(stage=stage)
-
-        return r
-
-    def retrieve(self, *args, **kwargs):
-        r = super().retrieve(*args, **kwargs)
-        r.data['categories'] = self.get_category_options()
-        r.data['currencies'] = Currencies
-        r.data['stages'] = ProductStages
-
-        r.data['by_categories'] = self.get_object().get_category_count()
-        return r
 
     def add_product_images(self, product, product_data: dict):
         name = product_data.get('name')
@@ -390,8 +372,38 @@ class SupplierOrderViewset(ViewSetMixin, viewsets.ModelViewSet):
                 attr = ProductAttribute\
                     .objects.create(product=product, name=name, value=value)
 
+    @action(methods=['post'], detail=True, url_path=r'pay')
+    def mark_paid(self, request, *args, **kwargs):
+        try:
+            supplier_order_mark_paid()
+        except Exception as e:
+            raise serializers.ValidationError({'order': str(e)})
+
+        return self.retrieve(request, *args, **kwargs)
+
+    def update(self, request, *args, **kwargs):
+        r = super().update(request, *args, **kwargs)
+        stage = request.data.get('stage')
+        if stage:
+            self.get_object().products.update(stage=stage)
+
+        return r
+
+    def retrieve(self, *args, **kwargs):
+        r = super().retrieve(*args, **kwargs)
+        r.data['categories'] = self.get_category_options()
+        r.data['currencies'] = Currencies
+        r.data['stages'] = ProductStages
+
+        r.data['by_categories'] = self.get_object().get_category_count()
+        return r
+
     def perform_create(self, serializer):
-        return serializer.save()
+        assert serializer.instance is None, 'instance should be None'
+        serializer.instance = supplier_order_create(**serializer.validated_data)
+
+    def perform_destroy(self, instance: SupplierOrder):
+        supplier_order_delete(instance=instance)
 
 
 def add_order_feed(request, supplier, *args, **kwargs):

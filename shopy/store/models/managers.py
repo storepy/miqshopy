@@ -39,18 +39,13 @@ class ProductQueryset(models.QuerySet):
             .annotate(sizes_count=Count('sizes', filter=models.Q(sizes__quantity__gt=0)))\
             .exclude(sizes_count=0)
 
-        # from shopy.store.models import ProductSize
-
-        # sizes = ProductSize.objects.exclude(quantity__lt=1)
-        # return self.filter(id__in=sizes.values_list('product_id', flat=True))
-
     def hits(self):
         if not apps.is_installed('miq.analytics'):
             return self.none()
 
         from miq.analytics.models import Hit
 
-        return Hit.objects.filter(path__contains='/shop/')  # type: models.Queryset
+        return Hit.objects.filter(path__contains='/shop/')
 
     def by_category_count(self):
         return self.values('category__name').order_by('category__name').annotate(count=Count('category__name'))
@@ -68,23 +63,6 @@ class ProductQueryset(models.QuerySet):
         search_qs = self.annotate(search=search_vector).filter(search=SearchQuery(query))\
             .values('id').annotate(count=Count('id')).values_list('id', flat=True)
         return self.filter(id__in=search_qs)
-
-        # return qs.distinct('position', 'created', 'name')
-
-    # def by_name(self, value):
-    #     if not isinstance(value, str):
-    #         return self.none()
-
-    #     keys = (
-    #         'name', 'description', 'category__name',
-    #         'category__description', 'attributes__value',
-    #         'supplier_items__item_sn'
-    #     )
-
-    #     return self.annotate(
-    #         values=Concat(*keys, output_field=models.CharField())
-    #     ).filter(values__icontains=value.lower())\
-    #         .order_by('name').distinct('name')
 
     def by_price(self, amount: int):
         return self.filter(
@@ -113,7 +91,7 @@ class ProductQueryset(models.QuerySet):
     def draft(self):
         return self.exclude(slug__in=self.published().values_list('slug', flat=True))
 
-    def published(self):
+    def published(self) -> models.QuerySet:
         """
         Products that have a retail price, a category, are published
         """
@@ -137,14 +115,14 @@ class ManagerMixin:
 
 class ProductManager(ManagerMixin, models.Manager):
 
-    def get_queryset(self, *args, **kwargs):
+    def get_queryset(self, *args, **kwargs) -> ProductQueryset:
         return ProductQueryset(self.model, *args, using=self._db, **kwargs)\
             .select_related('category', 'cover')\
             .prefetch_related('images')
 
 
 class CategoryQuerySet(models.QuerySet):
-    def has_products(self, *, published=True):
+    def has_products(self, *, published=True) -> models.QuerySet:
         """
         Filter categories that have products
         """

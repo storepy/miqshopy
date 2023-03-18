@@ -64,12 +64,13 @@ _s.headers = {
 
 
 def print_session(session=_s):
-    print('-<\n-')
-    pprint(dict(_s.cookies))
-    print('---------------\n-\n-')
-    pprint(_s.headers)
+    pass
+    # print('-<\n-')
+    # pprint(dict(_s.cookies))
+    # print('---------------\n-\n-')
+    # pprint(_s.headers)
 
-    print('Session:')
+    # print('Session:')
 
 
 def get(url, **kwargs):
@@ -161,7 +162,7 @@ def shein_url_to_data(url: str):
     # if 'us.shein.com' in urlparse(url).netloc:
     #     data = get_shein_us_data(url, goods_id)
     # else:
-    #     data = get_shein_com_data(url, goods_id)
+    # data = get_shein_com_data(url, goods_id)
 
     if (cover := data.get('cover')) and isinstance(cover, str):
         data['cover'] = clean_img_url(cover)
@@ -200,6 +201,7 @@ def get_shein_us_data(url: str, goods_id: str):
     assert url and goods_id, 'shein product url/goods_id required'
 
     raw = shein_data_from_mobile(goods_id, url)
+    # raw = shein_data_from_web(goods_id, url)
 
     # _raw = shein_data_from_web(goods_id, url)
     # if not raw:
@@ -229,8 +231,14 @@ def get_shein_us_data(url: str, goods_id: str):
 
 def shein_data_from_mobile(goods_id: str, url: str):
     api_url = f'https://m.shein.com/fr/product-xhr-{goods_id}.html?currency=USD&fromSpa=1&withI18n=0&_ver=1.1.8&_lang=fr'
+    print('====>>> ', api_url)
+
+    raise
+
     r = get(api_url)
-    assert r.status_code == 200, 'Request failed with status code ' + str(r.status_code) + '\n' + url + f'\n{r.text}'
+
+    assert r.status_code == 200, 'Mobile Request failed with status code ' + \
+        str(r.status_code) + '\n' + url + f'\n{r.text}'
 
     try:
         return r.json()
@@ -246,7 +254,7 @@ def get_shein_us_price(goods_id: str):
         "fields": {"realTimePricesWithPromotion": True}
     })
     if r.status_code != 200:
-        print('Request failed with status code', r.status_code, '\n')
+        print('Price Request failed with status code', r.status_code, '\n')
         return
 
     try:
@@ -267,9 +275,11 @@ def shein_data_from_web(goods_id: str, url: str):
     # _s.cookies.clear()
 
     r = get(api_url)
-    print(r.json())
+    #
+    # print(r.json())
+    #
     if r.status_code != 200:
-        print('Request failed with status code', r.status_code, '\n', url, '\n')
+        print('Web Request failed with status code', r.status_code, '\n', url, '\n')
         return
 
     soup = BeautifulSoup(r.text, 'html.parser')

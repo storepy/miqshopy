@@ -6,9 +6,9 @@ from django.contrib.sites.shortcuts import get_current_site
 
 from miq.core.models import Currencies
 from miq.core.serializers import serialize_context_pagination
-from miq.staff.views.generic import ListView
+from miq.staff.views.generic import ListView,TemplateView
 
-from ..viewsets.product import get_product_qs
+from ..services import product_list_qs, ProductListFilterSerializer
 from ..utils import get_category_options, get_product_size_choices
 from ..serializers import ShopSettingSerializer, ProductSerializer, ProductListSerializer
 from ..models import Product, ShopSetting, SupplierChoices, ProductStages
@@ -27,7 +27,17 @@ def get_base_context_data(request):
     return data
 
 
-# class StaffProductView(MultipleObjectMixin, DetailView):
+class StaffProductCreateView(TemplateView):
+    template_name = 'store/base.django.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        self.update_sharedData(context, {
+            **get_base_context_data(self.request),
+        })
+        return context
+
+
 class StaffProductView(ListView):
     model = Product
     template_name = 'store/base.django.html'
@@ -35,11 +45,21 @@ class StaffProductView(ListView):
     paginate_by = 20
 
     def get_queryset(self):
-        qs = get_product_qs(self.request, qs=super().get_queryset(), params=self.request.GET)
+        filters = ProductListFilterSerializer(data=self.request.GET)
+
+        qs = Product.objects.none()
+
+        # try catch
+        try:
+            filters.is_valid(raise_exception=True)
+        except Exception as e:
+            print(e)
+        else:
+            qs = product_list_qs(filters=filters.validated_data)
 
         self.object = get_object_or_404(qs, slug=self.kwargs.get('slug'))
-        return qs
-    # slug_url_kwarg = 'product_slug'
+
+        return qs.order_by('position', '-created', 'name')
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -57,12 +77,18 @@ class StaffProductView(ListView):
 
 
 class StaffProductsView(ListView):
+
     model = Product
-    template_name = 'store/base.django.html'
     paginate_by = 20
+    template_name = 'store/base.django.html'
 
     def get_queryset(self):
-        return get_product_qs(self.request, qs=super().get_queryset(), params=self.request.GET)
+        filters = ProductListFilterSerializer(data=self.request.GET)
+
+        # try catch
+        filters.is_valid(raise_exception=True)
+
+        return product_list_qs(filters=filters.validated_data).order_by('position', '-created', 'name')
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)

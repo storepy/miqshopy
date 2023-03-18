@@ -48,26 +48,6 @@ def on_product_did_save(sender, instance, **kwargs):
     page.save()
 
 
-@receiver(signals.pre_delete, sender=Product)
-def on_product_will_be_deleted(sender, instance, **kwargs):
-    if cover := instance.cover:
-        # proxy issue
-        ProductImage.objects.get(id=cover.id).delete()
-
-    if (attrs := instance.attributes) and attrs.exists():
-        attrs.all().delete()
-
-    if (imgs := instance.images) and imgs.exists():
-        imgs.all().delete()
-
-
-@receiver(signals.post_delete, sender=Product)
-def on_product_was_deleted(sender, instance, ** kwargs):
-    # protect: cannot delete a product with a page
-    if page := instance.page:
-        page.delete()
-
-
 @receiver(signals.pre_save, sender=Category)
 def on_category_will_save(sender, instance, **kwargs):
     if not instance.pk:
@@ -79,15 +59,6 @@ def on_category_will_save(sender, instance, **kwargs):
 def on_category_did_save(sender, instance, **kwargs):
     page = update_page(instance, instance.page)
     page.save()
-
-
-@receiver(signals.post_delete, sender=Category)
-def on_category_was_deleted(sender, instance, **kwargs):
-    if page := instance.page:
-        page.delete()
-
-    if cover := instance.cover:
-        cover.delete()
 
 
 @receiver(signals.post_save, sender=Site)

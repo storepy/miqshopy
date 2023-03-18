@@ -1,6 +1,7 @@
 
 /shopy/store/_scripts_constants.*
-
+.pytest_cache/
+.mypy_cache/
 shopyenv/
 
 # Unit test / coverage reports

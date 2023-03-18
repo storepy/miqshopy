@@ -10,7 +10,7 @@ from ..models import ProductHit
 from ..models import Product, Category, SupplierOrder, ShopSetting, SupplierChoices, ProductStages
 from ..serializers import ShopSettingSerializer, get_product_serializer_class, get_category_serializer_class
 
-from .v_product import StaffProductsView, StaffProductView
+from .v_product import StaffProductsView, StaffProductView,StaffProductCreateView
 from .v_category import StaffCategoryView
 
 __all__ = (

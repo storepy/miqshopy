@@ -1,3 +1,4 @@
+import typing
 from django.shortcuts import get_object_or_404
 
 from miq.core.views.generic import ListView
@@ -6,14 +7,20 @@ from miq.core.serializers import serialize_context_pagination
 from ...store.models import Product, Category
 from ...sales.api import APIProductListSerializer
 
+from ..services import (
+    product_qs, ProductFilterSerializer,
+    category_qs, category_hit_create,
+    customer_get_from_request
+)
+
 from .mixins import ViewMixin
 
 
 class CategoryView(ViewMixin, ListView):
-    model = Product
-    category = None  # type: 'Category'
+    model: typing.Type[Product] = Product
+    category: Category = None
     paginate_by: int = 12
-    template_name = 'shop/products.django.html'
+    template_name: typing.Literal = 'shop/products.django.html'
 
     def get_context_data(self, **kwargs) -> dict:
         ctx = super().get_context_data(**kwargs)
@@ -38,12 +45,23 @@ class CategoryView(ViewMixin, ListView):
         return ctx
 
     def get_queryset(self):
-        return self.category.get_products().published().order_for_shop()
-        # return self.category.products.published().order_for_shop()
+        filters = ProductFilterSerializer(data=self.request.GET)
+        if filters.is_valid():
+            return product_qs(filters=filters.validated_data).filter(category=self.category).order_for_shop()
+
+        return self.model.objects.none()
 
     def dispatch(self, request, *args, **kwargs):
-        self.category = get_object_or_404(
-            Category.objects.published().has_products(),
-            meta_slug=self.kwargs.get('category_meta_slug')
-        )
-        return super().dispatch(request, *args, **kwargs)
+        self.category = get_object_or_404(category_qs(), meta_slug=self.kwargs.get('category_meta_slug'))
+
+        res = super().dispatch(request, *args, **kwargs)
+
+        try:
+            category_hit_create(
+                category=self.category, request=request, response=res,
+                customer=customer_get_from_request(request, response=res),
+            )
+        except Exception:
+            pass
+
+        return res

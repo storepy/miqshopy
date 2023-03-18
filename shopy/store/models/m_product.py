@@ -16,7 +16,7 @@ from miq.core.utils import get_text_choices, truncate_str
 
 # from miq.core.middleware import local
 
-from .supplierModels import SupplierChoice
+from .m_supplier import SupplierChoice
 from .managers import ProductManager
 
 app_name = 'store'
@@ -89,10 +89,10 @@ class Product(BaseModelMixin):
     """
     IMAGES
     """
-
+ 
     cover = models.OneToOneField(
         f'{app_name}.ProductImage',
-        verbose_name=_("Cover"), on_delete=models.SET_NULL, blank=True, null=True
+        verbose_name=_("Cover"), on_delete=models.PROTECT, blank=True, null=True
     )
 
     # TODO: Limit to 10

@@ -3,13 +3,10 @@ from django.test import TestCase
 from django.test import LiveServerTestCase
 from django.urls import reverse_lazy
 
-from selenium import webdriver
 from shopy.store.models import ShopSetting
-
+from  miq.tests.utils import get_or_create_site
 from .utils import ShopMixin
 
-
-driver_path = '/Users/marqetintl/Dropbox/MIQ/projects/chromedriver'
 
 
 class TestProductView(ShopMixin, LiveServerTestCase):
@@ -17,7 +14,7 @@ class TestProductView(ShopMixin, LiveServerTestCase):
 
     def setUp(self) -> None:
         super().setUp()
-        site = self.site.save()
+        site = get_or_create_site()
         self.store_settings = ShopSetting.objects
         self.domain = self.live_server_url
 

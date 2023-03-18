@@ -20,9 +20,8 @@ def get_base_context_data(request):
 
 class StaffCategoryView(DetailView):
     model = Category
-    template_name = 'store/base.django.html'
     slug_field = 'slug'
-    paginate_by = 16
+    template_name = 'store/base.django.html'
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -36,27 +35,3 @@ class StaffCategoryView(DetailView):
         self.update_sharedData(context, data)
 
         return context
-
-
-# class StaffProductsView(ListView):
-#     model = Product
-#     template_name = 'store/base.django.html'
-#     paginate_by = 20
-
-#     def get_queryset(self):
-#         return get_product_qs(self.request, qs=super().get_queryset(), params=self.request.GET)
-
-#     def get_context_data(self, **kwargs):
-#         context = super().get_context_data(**kwargs)
-
-#         context['title'] = 'Products - Store'
-
-#         data = {
-#             **get_base_context_data(self.request),
-#             'products': ProductListSerializer(context.get('object_list'), many=True).data,
-#             'pagination': serialize_context_pagination(self.request, context)
-#         }
-
-#         self.update_sharedData(context, data)
-
-#         return context

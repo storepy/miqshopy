@@ -11,71 +11,63 @@ from rest_framework import serializers
 from miq.core.middleware import local
 from miq.core.models import SiteSetting
 from miq.core.views.generic import ListView, DetailView
-from miq.analytics.utils import get_hit_data
 from miq.core.serializers import serialize_context_pagination
 
 from ...sales.api import APIProductSerializer
-from ...store.models import Product, ProductHit
+from ...store.models import Product
 
 from ..serializers import category_to_dict, get_category_url
 from ..utils import product_to_jsonld, get_published_categories
 
+from ..services import product_qs, ProductFilterSerializer, product_hit_create, customer_get_from_request
+
 from .mixins import ViewMixin
 
 
-price_ranges = ['5000', '10000', '25000', '50000']
-
-
-def create_product_hit(request, response, instance):
-    customer = request.customer
-    _ = get_hit_data(request, response)
-    filter = {'url': _['url'], 'user_agent': _['user_agent'], 'ip': _['ip'], }
-
-    hits = ProductHit.objects.filter(**filter)
-    if not hits.exists():
-        return ProductHit.objects.create(**filter, product=instance, customer=customer)
-
-    hit = hits.first()
-    hit.count += 1
-
-    if not hit.customer and customer:
-        hit.customer = customer
-    hit.save()
-    return hit
-
-
 class ProductView(ViewMixin, DetailView):
-    model = Product
-    template_name = 'shop/product.django.html'
+    model: Product = Product
+    template_name: str = 'shop/product.django.html'
 
     def dispatch(self, request, *args, **kwargs):
         response = super().dispatch(request, *args, **kwargs)
 
+        product = self.object if hasattr(self, 'object') else self.get_object()
+        hit_data = dict(
+            product=product,
+            customer=customer_get_from_request(request, response=response),
+            request=request, response=response,
+            # type=ProductHit.TYPE_VIEW
+        )
+
         r = request.GET.get('r')
         if r == '1' and (num := SiteSetting.objects.get(site=get_current_site(request)).whatsapp_number):
             response = redirect(self.get_object().get_whatsapp_link(num, request))
+            # hit_data['type'] = ProductHit.TYPE_WHATSAPP
 
         try:
-            create_product_hit(request, response, self.object or self.get_object())
-        except Exception as e:
-            print('----------------------.hit', 'error', e)
+            product_hit_create(**hit_data)
+        except Exception:
+            pass
 
         return response
 
     def get_object(self, *args, **kwargs):
         p = get_object_or_404(
-            Product.objects.published(),
+            product_qs(),
             category__meta_slug=self.kwargs.get('category_meta_slug'),
             meta_slug=self.kwargs.get('meta_slug')
         )
+
         recent = self.request.session.get('_recent') or []
         if p.meta_slug not in recent:
             recent = [p.meta_slug, *recent[:3]]
+            self.request.session['_recent'] = recent
+            self.request.session.modified = True
 
-        self.request.session['_recent'] = recent
         return p
 
     def get_context_data(self, **kwargs):
+
         context = super().get_context_data(**kwargs)
 
         obj = context.get('object')
@@ -110,14 +102,14 @@ class ProductView(ViewMixin, DetailView):
 
 
 class ProductsView(ViewMixin, ListView):
-    model = Product
-    template_name = 'shop/products.django.html'
-    context_object_name = 'products'
-    paginate_by = 12
-    page_label = None
+    model: Product = Product
+    template_name: str = 'shop/products.django.html'
+    context_object_name: str = 'products'
+    paginate_by: int = 12
+    page_label: str = None
 
     # TODO: Stage
-    queryset = Product.objects.published().order_for_shop()
+    queryset = Product.objects.published()
 
     def get_context_data(self, **kwargs) -> dict:
         context = super().get_context_data(**kwargs)
@@ -133,8 +125,12 @@ class ProductsView(ViewMixin, ListView):
             'object_list': APIProductSerializer(context.get('object_list'), many=True).data,
             'pagination': serialize_context_pagination(self.request, context)
         }
+
         if self.page_label:
             data['page_label'] = self.page_label
+
+        if self.request.GET.get('sale'):
+            data['page_label'] = 'Soldes'
 
         data.update({
             'breadcrumbs': breadcrumbs,
@@ -147,19 +143,13 @@ class ProductsView(ViewMixin, ListView):
         return context
 
     def get_queryset(self):
-        qs = self.queryset
-        params = self.request.GET
-        if (sale := params.get('sale')) and sale == 'all':
-            qs = qs.is_on_sale()
-            self.page_label = 'Soldes'
 
-        if (q := self.request.GET.get('q')) and q != '':
-            qs = qs.search_by_query(q)
+        qs = self.queryset.none()
+        filters = ProductFilterSerializer(data=self.request.GET)
+        if filters.is_valid():
+            qs = product_qs(filters=filters.validated_data)
 
-        if (price := self.request.GET.get('price')) and price in price_ranges:
-            qs = qs.by_price(price)
-
-        return qs
+        return qs.order_for_shop()
 
 
 """
@@ -336,7 +326,7 @@ class ProductsFbDataFeed(View):
         writer = csv.DictWriter(response, fieldnames=FBSerializer.Meta.fields)
         writer.writeheader()
 
-        qs = Product.objects.published().exclude(is_explicit=True)
+        qs = product_qs().exclude(is_explicit=True)
         for product in qs:
             data = FBSerializer(product, context={"request": request}).data
 
